@@ -243,7 +243,9 @@ proc include {args} {
     if { [regexp "^/" $args ignore] == 0 } {
 	set args $env(HOME)/$args
     }
-    source_password_file $args
+    foreach file [glob $args] {
+        source_password_file $file
+    }
 }
 
 proc find {var router} {
