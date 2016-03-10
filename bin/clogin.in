@@ -72,6 +72,7 @@ set avenable 1
 # The default is that you login non-enabled (tacacs can have you login already
 # enabled)
 set avautoenable 0
+set force_enable 0
 # The default is to look in the password file to find the passwords.  This
 # tracks if we receive them on the command line.
 set do_passwd 1
@@ -112,6 +113,9 @@ for {set i 0} {$i < $argc} {incr i} {
 	# Expect debug mode
 	-d* {
 	    exp_internal 1
+        # Force enable command
+        } -enable {
+            set force_enable 1
 	# Username
 	} -u* {
 	    if {! [regexp .\[uU\](.+) $arg ignore user]} {
@@ -277,7 +281,9 @@ proc include {args} {
     if { [regexp "^/" $args ignore] == 0 } {
 	set args $env(HOME)/$args
     }
-    source_password_file $args
+    foreach file [glob $args] {
+        source_password_file $file
+    }
 }
 
 proc find {var router} {
@@ -318,7 +324,7 @@ proc source_password_file { password_file } {
 # returns: 0 on success, 1 on failure, -1 if rsh was used successfully
 proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile } {
     global command spawn_id in_proc do_command do_script platform passphrase
-    global prompt prompt_match u_prompt p_prompt e_prompt sshcmd
+    global prompt prompt_match u_prompt p_prompt e_prompt sshcmd usercmd usercmd_chat
     set in_proc 1
     set uprompt_seen 0
 
@@ -352,6 +358,20 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 		send_user "\nError: $cmd failed: $reason\n"
 		return 1
 	    }
+        } elseif [string match "usercmd" $prog] {
+            set retval [ catch {eval spawn $usercmd} reason ]
+            if { $retval } {
+                send_user "\nError: '$usercmd' failed: $reason\n"
+                exit 1
+            } elseif { [llength $usercmd_chat] > 0 } {
+                sleep 0.3
+                foreach {i j} $usercmd_chat {
+                    expect {
+                        -re $i { eval send "\"$j\""}
+                        timeout { send "\r"; send_user "\nTimeout in usercmd_chat waiting for -re $i: punting with CR\n"; break }
+                    }
+                }
+            }
 	} elseif ![string compare $prog "rsh"] {
 	    if { ! $do_command } {
 		if { [llength $cmethod] == 1 } {
@@ -628,6 +648,31 @@ proc do_enable { enauser enapasswd } {
     return 0
 }
 
+proc get_prompt { prompt } {
+    global platform
+    # we are logged in, now figure out the full prompt
+    set in_proc 1
+    send "\r"
+    regsub -all {^(\^*)(.*)} $prompt {\2} reprompt
+    expect {
+        -re "\[\r\n]+"          { exp_continue; }
+        -re "^(.+\[:.])1 ($reprompt)" { # stoopid extreme cmd-line numbers and
+                                  # prompt based on state of config changes,
+                                  # which may have an * at the beginning.
+                                  set junk $expect_out(1,string)
+                                  regsub -all "^\\\* " $expect_out(1,string) {} junk
+                                  regsub -all "\[\]\[\(\)]" $junk {\\&} junk;
+                                  set prompt ".? ?$junk\[0-9]+ $expect_out(2,string)";
+                                  set platform "extreme"
+                                }
+        -re "^.+$reprompt"      { set junk $expect_out(0,string);
+                                  regsub -all "\[\]\[\(\)+]" $junk {\\&} prompt;
+                                }
+    }
+    set in_proc 0
+    return $prompt
+}
+
 # Run commands given on the command line.
 proc run_commands { prompt command } {
     global do_saveconfig in_proc platform
@@ -654,22 +699,64 @@ proc run_commands { prompt command } {
     set sep "\u001"
     set commands [split $esccommand $sep]
     set num_commands [llength $commands]
+    set in_config 0
     # the pager can not be turned off on the PIX, so we have to look
     # for the "More" prompt.  the extreme is equally obnoxious in pre-12.3 XOS,
     # with a global switch in the config.
+
     for {set i 0} {$i < $num_commands} { incr i} {
 	if { [lindex $commands $i] == "\u002" } {
 	    send -- "\r"
 	} else {
-	    send -- "[subst -nocommands [lindex $commands $i]]\r"
+            set l_cmd [subst -nocommands [lindex $commands $i]]
+	    send -- "$l_cmd\r"
+            if { [string match {"^hostname"} $l_cmd] } { 
+                set prompt [ get_prompt "(>|#| \\(enable\\))"]
+                if { [string compare "extreme" "$platform"] } {
+                    # match cisco config mode prompts too, such as router(config-if)#,
+                    # but catalyst does not change in this fashion.
+                    regsub -lineanchor -- {^(.{1,11}).*([#>])$} $prompt {\1} reprompt
+                    regsub -all -- {[\\]$} $reprompt {} reprompt
+                    append reprompt {([^#>\r\n]+)?[#>](\\([^)\\r\\n]+\\))?}
+                } else {
+                    set reprompt $prompt
+                }
+            }
 	}
 	expect {
+            -re "^Enter TEXT message\.  End with the character '(.)'\.?\[\n\r]+"   {
+                                                  set endchar $expect_out(1,string)
+                                                  send_user -- "$expect_out(buffer)"
+                                                  for {set j [ expr $i + 1 ]} {$j < $num_commands} {incr j} {
+                                                      send -- "[subst -nocommands [lindex $commands $j]]\r"
+                                                      expect {
+                                                        -re "^\[^\n\r *]*$reprompt" { send_user -- "$expect_out(buffer)"; break }
+                                                        -re "^.*\r\n" { send_user -- "$expect_out(buffer)" }
+                                                      }
+                                                  }
+                                                  set i [ expr $j ]
+                                                }
+            -re "^Clear \"show interface\" counters on all interfaces \\\[confirm\\\]" {
+                send_user -- "$expect_out(buffer)"
+                send "y"
+                exp_continue
+            }
 	    -re "\b+"				{ exp_continue }
 	    -re "^\[^\n\r *]*$reprompt"		{ send_user -- "$expect_out(buffer)"
 						}
 	    -re "^\[^\n\r]*$reprompt."		{ send_user -- "$expect_out(buffer)"
 						  exp_continue
 						}
+            -re {(Destination|Source) filename \[[^\r\n]+\]\?} { # specific match for copy running startup
+                                                  send_user -- "$expect_out(buffer)" 
+                                                  send "\r"
+                                                  exp_continue
+                                                }
+            -re {^Do you wish to (continue|cleanup database|cleanup user local disk)\? \(\[NO\]/yes\)} { # specific match for ncs cleanup command
+                                                  send_user -- "$expect_out(buffer)"
+                                                  send "yes\r"
+                                                  exp_continue
+                                                }
 	    -re "^--More--\[\r\n]+"		{ # specific match c1900 pager
 						  send " "
 						  exp_continue
@@ -776,6 +863,14 @@ foreach router [lrange $argv $i end] {
 	set prompt "(>|#| \\(enable\\))"
     }
 
+    # look for forceenable option in .cloginrc & cmd-line
+    set fe [find forceenable $router]
+    if { "$fe" == "1" || $force_enable } {
+        set force_enable 1
+    } else {
+        set force_enable 0
+    }
+    
     # look for autoenable option in .cloginrc & cmd-line
     set ae [find autoenable $router]
     if { "$ae" == "1" || $avautoenable } {
@@ -894,6 +989,10 @@ foreach router [lrange $argv $i end] {
     set sshcmd [join [lindex [find sshcmd $router] 0] ""]
     if { "$sshcmd" == "" } { set sshcmd {ssh} }
 
+    # If user provides a router-specific connection method, use it
+    set usercmd [find usercmd $router]
+    set usercmd_chat [find usercmd_chat $router]
+
     # Login to the router
     if {[login $router $ruser $userpswd $passwd $enapasswd $cmethod $cyphertype $identfile]} {
 	incr exitval
@@ -901,10 +1000,10 @@ foreach router [lrange $argv $i end] {
 	continue
     }
     # Figure out the prompt.
-    if { [regexp -- "(#| \\(enable\\))" $prompt_match junk] == 1 } {
+    if { [regexp -- "(#| \\(enable\\))" $prompt_match junk] == 1} {
 	set enable 0
     }
-    if { $enable } {
+    if { $enable || $force_enable } {
 	if {[do_enable $enauser $enapasswd]} {
 	    if { $do_command || $do_script } {
 		incr exitval
@@ -914,23 +1013,8 @@ foreach router [lrange $argv $i end] {
 	}
     }
     # we are logged in, now figure out the full prompt
-    send "\r"
-    regsub -all {^(\^*)(.*)} $prompt {\2} reprompt
-    expect {
-	-re "\[\r\n]+"		{ exp_continue; }
-	-re "^(.+\[:.])1 ($reprompt)" { # stoopid extreme cmd-line numbers and
-				  # prompt based on state of config changes,
-				  # which may have an * at the beginning.
-				  set junk $expect_out(1,string)
-				  regsub -all "^\\\* " $expect_out(1,string) {} junk
-				  regsub -all "\[\]\[\(\)]" $junk {\\&} junk;
-				  set prompt ".? ?$junk\[0-9]+ $expect_out(2,string)";
-				  set platform "extreme"
-				}
-	-re "^.+$reprompt"	{ set junk $expect_out(0,string);
-				  regsub -all "\[\]\[\(\)+]" $junk {\\&} prompt;
-				}
-    }
+    set prompt [get_prompt $prompt]
+    
     if { $do_command || $do_script } {
 	if { [string compare "extreme" "$platform"] } {
 	    # If the prompt is (enable), then we are on a switch and the
@@ -946,7 +1030,7 @@ foreach router [lrange $argv $i end] {
 		expect -re $prompt  	{}
 		send "terminal width 132\r"
 	    }
-	    expect -re $prompt		{}
+	    expect -re $prompt      {}
 	} else {
 	    send "disable clipaging\r"
 	    expect -re $prompt		{}
