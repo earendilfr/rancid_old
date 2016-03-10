@@ -114,10 +114,10 @@ if ($file) {
     print STDERR "executing $lscript -t $timeo -c\"$commandstr\" $host\n" if ($debug);
     print STDOUT "executing $lscript -t $timeo -c\"$commandstr\" $host\n" if ($log);
     if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
-	system "$lscript -t $timeo -c \"$commandstr\" $host </dev/null > $host.raw 2>&1" || die "clogin failed for $host: $!\n";
+	system "$lscript -t $timeo -c \"$commandstr\" $host </dev/null > $host.raw 2>&1" || die "$lscript failed for $host: $!\n";
 	open(INPUT, "< $host.raw") || die "clogin failed for $host: $!\n";
     } else {
-	open(INPUT,"$lscript -t $timeo -c \"$commandstr\" $host </dev/null |") || die "clogin failed for $host: $!\n";
+	open(INPUT,"$lscript -t $timeo -c \"$commandstr\" $host </dev/null |") || die "$lscript failed for $host: $!\n";
     }
 }
 
