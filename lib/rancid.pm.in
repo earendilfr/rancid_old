@@ -48,7 +48,7 @@ package rancid;
 use 5.010;
 use strict 'vars';
 use warnings;
-use Socket qw(AF_INET AF_INET6 inet_pton);
+use Socket qw(AF_INET AF_INET6);
 require(Exporter);
 our @ISA = qw(Exporter);
 
@@ -90,6 +90,16 @@ our @EXPORT = qw($VERSION $devtype $script $lscript @modules $inloop
 
 BEGIN {
     $VERSION = '@VERSION@';
+    my $ip6 = eval {
+        require Socket;
+        Socket->VERSION(1.95);
+        Socket->import( 'inet_pton' );
+        1;
+    } || eval {
+        require Socket6;
+        Socket6->import( 'inet_pton' );
+        1;
+    };
 }
 
 # initialize common rancid parameters and handle command-line arguments.
