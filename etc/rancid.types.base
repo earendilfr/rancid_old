@@ -44,6 +44,9 @@ avocent;login;avologin
 baynet;script;brancid
 baynet;login;blogin
 #
+bnt;script;bntrancid
+bnt;login;bntlogin
+#
 cat5;script;cat5rancid
 cat5;login;clogin
 #
@@ -52,7 +55,9 @@ cisco;script;rancid -t cisco
 cisco;login;clogin
 cisco;module;ios
 cisco;inloop;ios::inloop
+cisco;command;ios::RunCommand;copy running-config startup-config
 cisco;command;ios::ShowVersion;show version
+cisco;command;ios::ShowChassis;show chassis
 cisco;command;ios::ShowRedundancy;show redundancy secondary
 cisco;command;ios::ShowIDprom;show idprom backplane
 cisco;command;ios::ShowInstallActive;show install active
@@ -123,6 +128,7 @@ cisco-nx;login;clogin
 cisco-nx;module;nxos
 cisco-nx;inloop;nxos::inloop
 cisco-nx;command;rancid::RunCommand;term no monitor-force
+cisco-nx;command;nxos::RunCommand;copy running-config startup-config
 cisco-nx;command;nxos::ShowVersion;show version
 cisco-nx;command;nxos::ShowVersionBuild;show version build-info all
 cisco-nx;command;nxos::ShowLicense;show license
@@ -162,6 +168,7 @@ cisco-xr;module;iosxr
 cisco-xr;inloop;iosxr::inloop
 cisco-xr;command;rancid::RunCommand;terminal no-timestamp;Disable timestamps XR 3.6
 cisco-xr;command;rancid::RunCommand;terminal exec prompt no-timestamp;Disable timestamps XR 3.8
+cisco-xr;command;iosxr::RunCommand;copy running-config startup-config
 cisco-xr;command;iosxr::ShowVersion;admin show version
 cisco-xr;command;iosxr::ShowInstallSummary;admin show install summary;XR image
 cisco-xr;command;iosxr::ShowLicense;admin show license;XR image
@@ -260,8 +267,21 @@ extreme;login;clogin
 ezt3;script;erancid
 ezt3;login;elogin
 #
-f5;script;f5rancid
-f5;login;clogin
+#f5;script;f5rancid
+f5;script;rancid -t f5
+f5;login;f5login
+f5;module;f5
+f5;inloop;f5::inloop
+f5;command;f5::ShowHardware;clsh tmsh show /sys hardware
+f5;command;f5::ShowHardware;tmsh show /sys hardware
+f5;command;f5::ShowVersion;tmsh show /sys version
+f5;command;f5::ShowLicense;tmsh show /sys license
+f5;command;f5::ShowZebOSconf;cat /config/ZebOS.conf
+f5;command;f5::ShowZebOSsockets;lsof -i :179
+f5;command;f5::ShowRouteStatic;tmsh show /net route static
+#f5;command;f5::ShowSslCrt;ls --full-time --color=never /config/ssl/ssl.crt
+#f5;command;f5::ShowSslKey;ls --full-time --color=never /config/ssl/ssl.key
+f5;command;f5::WriteTermTMSH;tmsh -q list
 #
 force10;script;f10rancid
 force10;login;clogin
@@ -280,6 +300,9 @@ foundry;command;foundry::ShowModule;show module
 foundry;command;foundry::ShowFlash;show flash
 foundry;command;foundry::WriteTerm;write term
 foundry;command;foundry::WriteTerm;show running-config
+#
+h3c;script;h3crancid
+h3c;login;h3clogin
 #
 hitachi;script;htrancid
 hitachi;login;htlogin
