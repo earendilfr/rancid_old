@@ -177,13 +177,13 @@ fi
 
 # create a .cvsignore/.gitignore
 case $RCSSYS in
-git )
-    if [ ! -f .gitignore ] ; then
-	touch .gitignore
-	git add .gitignore
-    fi
-    rm -rf .gitignore
-    cat > .gitignore <<EOF
+	git )
+		if [ ! -f .gitignore ] ; then
+			touch .gitignore
+			$RCSSYS add .gitignore
+		fi
+		rm -rf .gitignore
+		cat > .gitignore <<EOF
 /routers.all
 /routers.down
 /routers.single
@@ -193,17 +193,17 @@ git )
 *.new
 *.raw
 EOF
-    if [ -e .gitignore.locale ] ; then
-	cat .gitignore.locale >> .gitignore
-    fi
-    ;;
-cvs | svn )
-    if [ ! -f .cvsignore ] ; then
-	touch .cvsignore
-	$RCSSYS add .cvsignore
-    fi
-    rm -rf .cvsignore
-    cat >.cvsignore <<EOF
+		if [ -e .gitignore.locale ] ; then
+			cat .gitignore.locale >> .gitignore
+		fi
+		;;
+	cvs | svn )
+		if [ ! -f .cvsignore ] ; then
+			touch .cvsignore
+			$RCSSYS add .cvsignore
+		fi
+		rm -rf .cvsignore
+		cat >.cvsignore <<EOF
 .cvsignore
 routers.all
 routers.down
@@ -211,83 +211,91 @@ routers.single
 routers.up
 runcount
 EOF
-    if [ -e .cvsignore.locale ] ; then
-	cat .cvsignore.locale >> .cvsignore
-    fi
-    if [ ! -f configs/.cvsignore ] ; then
-	touch configs/.cvsignore
-	$RCSSYS add configs/.cvsignore
-    fi
-    rm -rf configs/.cvsignore
-    cat > configs/.cvsignore <<EOF2
+		if [ -e .cvsignore.locale ] ; then
+			cat .cvsignore.locale >> .cvsignore
+		fi
+		if [ ! -f configs/.cvsignore ] ; then
+			touch configs/.cvsignore
+			$RCSSYS add configs/.cvsignore
+		fi
+		rm -rf configs/.cvsignore
+		cat > configs/.cvsignore <<EOF2
 .old
 *.new
 *.raw
 EOF2
-    if [ -e configs/.cvsignore.locale ] ; then
-	cat configs/.cvsignore.locale >> configs/.cvsignore
-    fi
-    if [ $RCSSYS = svn ] ; then
-	svn propset svn:ignore -F .cvsignore .
-	svn propset svn:ignore -F configs/.cvsignore configs
-	svn update .
-	svn commit -m 'set svn:ignores' .
-    fi
-    ;;
+		if [ -e configs/.cvsignore.locale ] ; then
+			cat configs/.cvsignore.locale >> configs/.cvsignore
+		fi
+		if [ $RCSSYS = svn ] ; then
+			svn propset svn:ignore -F .cvsignore .
+			svn propset svn:ignore -F configs/.cvsignore configs
+			svn update .
+			svn commit -m 'set svn:ignores' .
+		fi
+		;;
 esac
 
 # if there is a rancid.conf, check if it needs to be added to the RCS
 if [ -f rancid.conf ] ; then
     case $RCSSYS in
-    cvs )
-	cvs log -rHEAD rancid.conf > /dev/null 2>&1
-	if [ $? -eq 0 ] ; then LN=1; else LN=0; fi
-	;;
-    svn )
-	LN=`(svn ls rancid.conf | wc -l) 2>/dev/null`
-	;;
-    git )
-	git status -s rancid.conf | grep '^?'
-	if [ $? -eq 0 ] ; then LN=1; else LN=0; fi
-        ;;
+		cvs )
+			$RCSSYS log -rHEAD rancid.conf > /dev/null 2>&1
+			if [ $? -eq 0 ] ; then LN=1; else LN=0; fi
+			;;
+		svn )
+			LN=$(($RCSSYS ls rancid.conf | wc -l) 2>/dev/null)
+			;;
+		git )
+			$RCSSYS status -s rancid.conf | grep '^?'
+			if [ $? -eq 0 ]; then LN=1; else LN=0; fi
+			;;
     esac
-    if [ $LN -eq 0 ] ; then
-	$RCSSYS add rancid.conf
-    fi
+	[ $LN -eq 0 ] && $RCSSYS add rancid.conf
 fi
 
 # do RCS update of router.db in case anyone has fiddled.
 case $RCSSYS in
-git )
-    # git doesnt make this easy.  XXX
-    #git fetch > $TMP 2>&1
-    #git checkout FETCH_HEAD -- router.db
-    #grep "^C" $TMP > /dev/null	# XXX right for git?
-    touch $TMP
-    ;;
-cvs | svn )
-    $RCSSYS update router.db > $TMP 2>&1
-    grep "^C" $TMP > /dev/null
-    if [ $? -eq 0 ] ; then
-	echo "There were $RCSSYS conflicts during update."
-	echo ""
-	cat $TMP
-	rm -f $TMP
-	exit 1
-    fi
-    ;;
+	git )
+		# git doesnt make this easy.  XXX
+		#git fetch > $TMP 2>&1
+		#git checkout FETCH_HEAD -- router.db
+		#grep "^C" $TMP > /dev/null	# XXX right for git?
+		touch $TMP
+		;;
+	cvs | svn )
+		$RCSSYS update router.db > $TMP 2>&1
+		grep "^C" $TMP > /dev/null
+		if [ $? -eq 0 ] ; then
+			echo "There were $RCSSYS conflicts during update."
+			echo ""
+			cat $TMP
+			rm -f $TMP
+			exit 1
+		fi
+		;;
 esac
 rm -f $TMP
 
 if [ ! -f $DIR/router.db ] ; then
     echo "$DIR/router.db does not exist."
     (
-	echo "To: $adminmailrcpt"
-	echo "Subject: no $GROUP/router.db file"
-	echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
-	echo ""
-	echo "$DIR/router.db does not exist."
-    ) | $SENDMAIL -t $MAILOPTS
+		echo "To: $adminmailrcpt"
+		echo "Subject: no $GROUP/router.db file"
+		echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
+		echo ""
+		echo "$DIR/router.db does not exist."
+    ) | @SENDMAIL@ -t $MAILOPTS
+    exit 1;
+elif [ ! -z "$(perl -ane 'next if ($F[0] =~ /^#/); if ($F[0] !~ /^.*;.*;(up|down)/) { print "$F[0]\n"; }' $DIR/router.db)" ]; then
+    echo "$DIR/router.db doesn't have the correct format. the separator should be ';' since version 3 and not ':' like in version 2."
+	(
+		echo "To: $adminmailrcpt"
+		echo "Subject: wrong $GROUP/router.db file format"
+		echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
+		echo ""
+		echo "$DIR/router.db doesn't have the correct format. the separator should be ';' since version 3 and not ':' like in version 2."
+    ) | @SENDMAIL@ -t $MAILOPTS
     exit 1;
 fi
 
@@ -298,17 +306,18 @@ fi
 cd $DIR
 trap 'rm -fr routers.db routers.all.new routers.down.new routers.up.new \
 	routers.mail routers.added routers.deleted $TMP;' 1 2 15
-sed -e '/^#/d' -e 's/^ *//' -e 's/ *$//' -e 's/ *; */;/g' router.db |
-	tr '[A-Z]' '[a-z]' | sort -u > routers.db
-cut -d\; -f1,2 routers.db > routers.all.new
+# We don't convert line in lowercase because it's impact the directory tree in conf file
+#sed -e '/^#/d' -e 's/^ *//' -e 's/ *$//' -e 's/ *; */;/g' router.db | tr '[A-Z]' '[a-z]' | sort -u > routers.db
+sed -e '/^#/d' -e 's/^ *//' -e 's/ *$//' -e 's/ *; */;/g' router.db | sort -u > routers.db
+cut -d\; -f1,2,5 routers.db > routers.all.new
 if [ ! -f routers.all ] ; then touch routers.all; fi
 @DIFF_CMD@ routers.all routers.all.new > /dev/null 2>&1; RALL=$?
 @PERLV@ -F\; -ane '{$F[2] =~ s/\s*\$//; ($F[0] =~ tr@A-Z@a-z@, print $_)
     if ($F[2] !~ /^up$/i);}' routers.db > routers.down.new
 if [ ! -f routers.down ] ; then touch routers.down; fi
 @DIFF_CMD@ routers.down routers.down.new > /dev/null 2>&1; RDOWN=$?
-@PERLV@ -F\; -ane '{$F[2] =~ s/\s*\$//; ($F[0] =~ tr@A-Z@a-z@,
-    print "$F[0];$F[1]\n") if ($F[2] =~ /^up$/i);}' routers.db > routers.up.new
+@PERLV@ -F\; -ane '{$F[2] =~ s/\s*\$//; ($F[0] =~ tr@A-Z@a-z@, print $_) 
+    if ($F[2] =~ /^up$/i);}' routers.db > routers.up.new
 if [ ! -f routers.up ] ; then touch routers.up; fi
 @DIFF_CMD@ routers.up routers.up.new > /dev/null 2>&1; RUP=$?
 
@@ -316,53 +325,49 @@ if [ $RALL -ne 0 -o $RDOWN -ne 0 -o $RUP -ne 0 ] ; then
     (
 	if [ $RUP -ne 0 ] ; then
 	    if [ ! -s routers.up ] ; then
-		echo Routers changed to up:
-		sed -e 's/^/        /' routers.up.new
-		echo
+			echo Routers changed to up:
+			sed -e 's/^/        /' routers.up.new
+			echo
 	    else
-		WCUP=`comm -13 routers.up routers.up.new | wc -l | \
-			sed -e 's/^ *\([^ ]*\)/\1/'`
-		if [ $WCUP -gt 0 ] ; then
-		    echo Routers changed to up:
-		    comm -13 routers.up routers.up.new | sed -e 's/^/        /'
-		    echo
-		fi
+			WCUP=$(comm -13 routers.up routers.up.new | wc -l | sed -e 's/^ *\([^ ]*\)/\1/')
+			if [ $WCUP -gt 0 ] ; then
+				echo Routers changed to up:
+				comm -13 routers.up routers.up.new | sed -e 's/^/        /'
+				echo
+			fi
 	    fi
 	fi
 	if [ $RDOWN -ne 0 ] ; then
 	    if [ ! -s routers.down ] ; then
-		echo Routers changed to down:
-		sed -e 's/^/        /' routers.down.new
-		echo
+			echo Routers changed to down:
+			sed -e 's/^/        /' routers.down.new
+			echo
 	    else
-		WCDOWN=`comm -13 routers.down routers.down.new | wc -l | \
-			sed -e 's/^ *\([^ ]*\)/\1/'`
-		if [ $WCDOWN -eq 1 ] ; then
-		    echo Routers changed to down:
-		    comm -13 routers.down routers.down.new | \
-			sed -e 's/^/        /'
-		    echo
-		fi
+			WCDOWN=$(comm -13 routers.down routers.down.new | wc -l | sed -e 's/^ *\([^ ]*\)/\1/')
+			if [ $WCDOWN -eq 1 ] ; then
+				echo Routers changed to down:
+				comm -13 routers.down routers.down.new | \
+				sed -e 's/^/        /'
+				echo
+			fi
 	    fi
 	fi
 	if [ $RALL -eq 1 ] ; then
-	    comm -13 routers.all routers.all.new | sed -e 's/^/        /' \
-		> routers.added
-	    comm -23 routers.all routers.all.new | sed -e 's/^/        /' \
-		> routers.deleted
+	    comm -13 routers.all routers.all.new | sed -e 's/^/        /' > routers.added
+	    comm -23 routers.all routers.all.new | sed -e 's/^/        /' > routers.deleted
 
-	    WCADDED=`wc -l routers.added | sed -e 's/^ *\([^ ]*\) .*$/\1/'`
-	    WCDELETED=`wc -l routers.deleted | sed -e 's/^ *\([^ ]*\) .*$/\1/'`
+	    WCADDED=$(wc -l routers.added | sed -e 's/^ *\([^ ]*\) .*$/\1/')
+	    WCDELETED=$(wc -l routers.deleted | sed -e 's/^ *\([^ ]*\) .*$/\1/')
 
 	    if [ $WCADDED -gt 0 ] ; then
-		echo Added routers:
-		cat routers.added
-		echo
+			echo Added routers:
+			cat routers.added
+			echo
 	    fi
 	    if [ $WCDELETED -gt 0 ] ; then
-		echo Deleted routers:
-		cat routers.deleted
-		echo
+			echo Deleted routers:
+			cat routers.deleted
+			echo
 	    fi
 
 	    rm -f routers.added routers.deleted
@@ -371,38 +376,47 @@ if [ $RALL -ne 0 -o $RDOWN -ne 0 -o $RUP -ne 0 ] ; then
 
     if [ -s routers.mail ] ; then
 	(
-	  echo "To: $adminmailrcpt"
-	  echo "Subject: changes in $GROUP routers"
-	  echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
-	  echo ""
-	  cat routers.mail
-	) | $SENDMAIL -t $MAILOPTS
+		echo "To: $adminmailrcpt"
+		echo "Subject: changes in $GROUP routers"
+		echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
+		echo ""
+		cat routers.mail
+	) | @SENDMAIL@ -t $MAILOPTS
     fi
     rm -f routers.mail
 
     cd $DIR/configs
 
-    # Add new routers to the CVS structure.
-    for router in `comm -13 $DIR/routers.up $DIR/routers.up.new`
-    do
-	OFS=$IFS
-	IFS=';'
-	set $router
-	IFS=$OFS
-	router=$1
-
-	touch $router
-	case $RCSSYS in
-	cvs )
-	    cvs add -ko $router
-	    ;;
-	svn | git )
-	    $RCSSYS add $router
-	    ;;
-	esac
-	$RCSSYS commit -m 'new router' $router
-	echo "Added $router"
-    done
+    # Add new routers to the CVS structure
+    comm -13 $DIR/routers.up $DIR/routers.up.new | {
+		ROUTER_ADDED=
+		while IFS=';' read -r router mfg stat comment dir; do
+			[ -z "$dir" ] && dir='.'
+			[ ! -d "$dir" ] && mkdir -p "$dir"
+			touch "$dir/$router"
+			case $RCSSYS in
+				cvs )
+					$RCSSYS add -ko "$dir/$router"
+					;;
+				svn | git )
+					$RCSSYS add "$dir/$router"
+					;;
+			esac
+			# To avoid many commit on the repository, I perform only one commit at the end
+			#$RCSSYS commit -m 'new router' $router
+			echo "Added $router"
+			ROUTER_ADDED="$ROUTER_ADDED $router"
+		done
+		
+		case $RCSSYS in
+			cvs | svn )
+				$RCSSYS commit -m 'Add all the routers $ROUTER_ADDED'
+				;;
+			git )
+				$RCSSYS commit -m 'Add all the routers $ROUTER_ADDED' -a
+				;;
+		esac
+	}
     echo
     cd $DIR
 
@@ -424,58 +438,58 @@ trap 'rm -fr $TMP;' 1 2 15
 
 cd $DIR/configs
 # check for 'up' routers missing in RCS.  no idea how this happens to some folks
-for router in `cut -d\; -f1 ../routers.up` ; do
-    case $RCSSYS in
-    cvs )
-	cvs status $router | grep -i 'status: unknown' > /dev/null 2>&1
-	if [ $? -eq 0 ] ; then
-	    touch $router
-	    cvs add -ko $router
-	    cvs commit -m 'new router' $router
-	    echo "$RCSSYS added missing router $router"
-	fi
-	;;
-    svn )
-	if [ ! -e $router ] ; then
-	    touch $router
-	fi
-	svn status $router | grep '^?' > /dev/null 2>&1
-	if [ $? -eq 0 ] ; then
-	    svn add $router
-	    svn commit -m 'new router' $router
-	    echo "$RCSSYS added missing router $router"
-	fi
-        ;;
-    git )
-	if [ ! -e $router ] ; then
-	    touch $router
-	fi
-	git status $router | grep '^?' > /dev/null 2>&1
-	if [ $? -eq 0 ] ; then
-	    git add $router
-	    git commit -m 'new router' $router
-	    echo "$RCSSYS added missing router $router"
-	fi
-        ;;
-    esac
-done
+cut -d\; -f1-5 ../routers.up | {
+	while IFS=';' read -r router mfg stat comment dir; do
+		[ -z "$dir" ] && dir='.'
+		[ ! -d "$dir" ] && mkdir -p "$dir"
+		case $RCSSYS in
+			cvs )
+				$RCSSYS status "$dir/$router" | grep -i 'status: unknown' > /dev/null 2>&1
+				if [ $? -eq 0 ] ; then
+					touch "$dir/$router"
+					cvs add -ko "$dir/$router"
+					#cvs commit -m 'new router' $router
+					echo "$RCSSYS added missing router $router"
+				fi
+				;;
+			svn | git )
+				[ ! -e "$dir/$router" ] && touch "$dir/$router"
+				$RCSSYS status "$dir/$router" | grep '^?' > /dev/null 2>&1
+				if [ $? -eq 0 ] ; then
+					$RCSSYS add "$dir/$router"
+					#svn commit -m 'new router' $router
+					echo "$RCSSYS added missing router $router"
+				fi
+				;;
+		esac
+	done
+}
+case $RCSSYS in
+	svn | cvs )
+		$RCSSYS commit -m 'Add all missing new routers'
+		;;
+	git )
+		$RCSSYS commit -m 'Add all missing new routers' -a
+		;;
+esac
 echo
 # delete configs from RCS for routers not listed in routers.up.
-for router in `find . \( -name \*.new -prune -o -name CVS -prune -o -name .svn -prune -o -name .cvsignore -prune -o -name .gitignore -prune \) -o -type f -print | sed -e 's/^.\///'` ; do
-    grep -i "^$router\;" ../router.db > /dev/null 2>&1
+find . \( -name *.new -prune -o -name CVS -prune -o -name .svn -prune -o -name .gitignore -prune -o -name .git -prune \) -o -type f -print | sed -e 's/^.\///' | while read -r router
+do
+    grep -i "^$router\;" ./router.db > /dev/null 2>&1
     if [ $? -eq 1 ] ; then
-	rm -f $router
-	case $RCSSYS in
-	cvs | svn )
-	    $RCSSYS delete $router
-	    $RCSSYS commit -m "deleted router $router" $router
-	    ;;
-	git )
-	    git rm $router
-	    git commit -m "deleted router $router" $router
-	    ;;
-	esac
-	echo "Deleted $router"
+		rm -f $router
+		case $RCSSYS in
+			cvs | svn )
+				$RCSSYS delete $router
+				$RCSSYS commit -m "deleted router $router" $router
+				;;
+			git )
+				git rm $router
+				git commit -m "deleted router $router" $router
+				;;
+		esac
+		echo "Deleted $router"
     fi
 done
 cd $DIR
@@ -485,14 +499,14 @@ if [ ! -s routers.up ] ; then
     # commit router.db
     message="updates of group $GROUP"
     case $RCSSYS in
-    cvs | svn )
-	$RCSSYS commit -m "$message" router.db
-	;;
-    git )
-	git add router.db
-	git commit -m "$message" router.db
-	;;
-    esac
+		cvs | svn )
+			$RCSSYS commit -m "$message" router.db
+			;;
+		git )
+			git add router.db
+			git commit -m "$message" router.db
+			;;
+	esac
     exit;
 fi
 
@@ -500,10 +514,8 @@ fi
 if [ "X$device" != "X" ] ; then
     trap 'rm -fr $TMP $DIR/routers.single;' 1 2 15
     devlistfile="$DIR/routers.single"
-    grep -i "^$device\;" routers.up > $devlistfile
-    if [ $? -eq 1 ] ; then
-	exit;
-    fi
+    grep -i -P "^$device\;" routers.up > $devlistfile
+	[ $? -eq 1 ] && exit
 else
     devlistfile="$DIR/routers.up"
 fi
@@ -522,64 +534,52 @@ par -q -n $PAR_COUNT -c 'rancid-fe "{}"' $devlistfile
 # $pass times.
 pass=$MAX_ROUNDS
 round=1
-if [ -f $DIR/routers.up.missed ] ; then
-    rm -f $DIR/routers.up.missed
-fi
-while [ $round -le $pass ]
-do
-    for router in `cat $devlistfile`
-    do
-	OFS=$IFS
-	IFS=';'
-	set $router
-	IFS=$OFS
-	router=$1; mfg=$2
-
-	if [ ! -s $router.new ]
-	then
-	    echo "$router;$mfg" >> $DIR/routers.up.missed
-	    rm -f $router.new
-	fi
-    done
-
+[ -f $DIR/routers.up.missed ] && rm -f $DIR/routers.up.missed
+while [ $round -le $pass ]; do
+    cat $devlistfile | {
+		while IFS=';' read -r router mfg stat comment dir; do
+			if [ ! -s "$router.new" ]
+			then
+				echo "$router;$mfg;$stat;$dir" >> $DIR/routers.up.missed
+				rm -f "$router.new"
+			fi
+		done
+	}
     if [ -f $DIR/routers.up.missed ] ; then
-	echo "====================================="
-	echo "Getting missed routers: round $round."
-	par -q -n $PAR_COUNT -c 'rancid-fe "{}"' $DIR/routers.up.missed
-	rm -f $DIR/routers.up.missed
-	round=`expr $round + 1`
+		echo "====================================="
+		echo "Getting missed routers: round $round."
+		par -q -n $PAR_COUNT -c 'rancid-fe "{}"' $DIR/routers.up.missed
+		rm -f $DIR/routers.up.missed
+		round=$(expr $round + 1)
     else
-	echo "All routers sucessfully completed."
-	round=`expr $pass + 1`
+		echo "All routers sucessfully completed."
+		round=$(expr $pass + 1)
     fi
 done
 echo
 
 # Make sure that no empty/truncated configs are accepted.  The remainder are
 # renamed from device_name.new -> device_name.
-for router in `cat $devlistfile | cut -d\; -f1`
-do
-    if [ ! -s $router.new ] ; then
-	rm -f $router.new
-    else
-	notcomment=`egrep -v "^[-*\!\;#]|\/\*" $router.new | wc -l`
-	if [ $notcomment -gt 10 ]; then
-	    lines=1;
-	else
-	    lines=0;
-	fi
-
-	if [ ! $lines ] ; then
-	    rm -f $router.new
-	else
-	    mv -f $router.new $router
-	    if [ $? -ne 0 ] ; then
-		echo "Error: could not rename $router.new to $router" >&2
-		rm -f $router.new
-	    fi
-	fi
-    fi
-done
+cat $devlistfile | {
+	while IFS=';' read -r router mfg stat comment dir; do
+		[ -z "$dir" ] && dir='.'
+		if [ ! -s "$router.new" ] ; then
+			rm -f "$router.new"
+		else
+			notcomment=$(egrep -v "^[-*\!\;#]|\/\*" $router.new | wc -l)
+			[ $notcomment -gt 10 ] && lines=1 || lines=0
+			if [ ! $lines ] ; then
+				rm -f "$router.new"
+			else
+				mv "$router.new" "$dir/$router"
+				if [ $? -ne 0 ] ; then
+					echo "Error: could not rename $router.new to $router"
+					rm -f "$router.new"
+				fi
+			fi
+		fi
+	done
+}
 
 # This has been different for different machines...
 # Diff the directory and then checkin.
@@ -587,44 +587,48 @@ trap 'rm -fr $TMP $TMP.diff $DIR/routers.single;' 1 2 15
 cd $DIR
 if [ "X$DIFFSCRIPT" = "X" ]; then
     case $RCSSYS in
-    cvs )
-	cvs -f @DIFF_CMD@ -ko | sed -e '/^RCS file: /d' -e '/^--- /d' \
-	-e '/^+++ /d' -e 's/^\([-+ ]\)/\1 /' >$TMP.diff
-	;;
-    svn | git )
-	$RCSSYS diff | sed -e '/^+++ /d' -e 's/^\([-+ ]\)/\1 /' >$TMP.diff
-	;;
+		cvs )
+			$RCSSYS -f @DIFF_CMD@ -ko | sed -e '/^RCS file: /d' -e '/^--- /d' -e '/^+++ /d' -e 's/^\([-+ ]\)/\1 /' >$TMP.diff
+			;;
+		svn | git )
+			$RCSSYS diff | sed -e '/^+++ /d' -e 's/^\([-+ ]\)/\1 /' >$TMP.diff
+			;;
     esac
 else
     case $RCSSYS in
-    cvs )
-	cvs -f @DIFF_CMD@ -ko | (eval $DIFFSCRIPT) 2>&1 >$TMP.diff
-	;;
-    svn | git )
-	$RCSSYS diff | (eval $DIFFSCRIPT) 2>&1 >$TMP.diff
-	;;
+		cvs )
+			$RCSSYS -f @DIFF_CMD@ -ko | (eval $DIFFSCRIPT) 2>&1 >$TMP.diff
+			;;
+		svn | git )
+			$RCSSYS diff | (eval $DIFFSCRIPT) 2>&1 >$TMP.diff
+			;;
     esac
 fi
 
 if [ $alt_mailrcpt -eq 1 ] ; then
-    subject="router config diffs - courtesy of $mailrcpt"
-else
-    subject="router config diffs"
+	courtesy=" - courtesy of $mailrcpt"
 fi
+subject="router config diffs$courtesy"
 if [ "X$device" != "X" ] ; then
-    if [ $RCSSYS = git ] ; then
-	$RCSSYS commit -am "updates - courtesy of $mailrcpt"
-    else
-	$RCSSYS commit -m "updates - courtesy of $mailrcpt"
-    fi
+	case $RCSSYS in
+		git )
+			$RCSSYS commit -am "updates of the $(date +%F)$courtesy"
+			;;
+		svn | cvs )
+			$RCSSYS commit -m "updates of the $(date +%F)$courtesy"
+			;;
+	esac
     subject="$GROUP/$device $subject"
 else
-    if [ $RCSSYS = git ] ; then
-	$RCSSYS commit -am updates
-    else
-	$RCSSYS commit -m updates
-    fi
-    subject="$GROUP $subject"
+	case $RCSSYS in
+		git )
+			$RCSSYS commit -am "updates of the $(date +%F)$courtesy"
+			;;
+		svn | cvs )
+			$RCSSYS commit -m "updates of the $(date +%F)$courtesy"
+			;;
+	esac
+	subject="$GROUP $subject"
 fi
 
 # working-directory maintenance & cleanup every 100 runs
@@ -635,16 +639,16 @@ else
     RUNCOUNT=1
 fi
 case $RCSSYS in
-svn )
-    svn cleanup
-    ;;
-git )
-    git push
-    if [ $RUNCOUNT -gt 100 ] ; then
-	git gc --quiet
-	RUNCOUNT=0
-    fi
-    ;;
+	svn )
+		svn cleanup
+		;;
+	git )
+		git push
+		if [ $RUNCOUNT -gt 100 ]; then 
+			git gc --quiet
+			RUNCOUNT=0
+		fi
+		;;
 esac
 rm -f ./runcount
 echo $RUNCOUNT > ./runcount
@@ -653,57 +657,55 @@ echo $RUNCOUNT > ./runcount
 if [ -s $TMP.diff ] ; then
     MAXSZ=${MAILSPLIT:=0}
     if [ $MAXSZ -ne 0 ] ; then
-	BLOCKSIZE=1024; export BLOCKSIZE
-	tmpk=`perl -e "my(@S) = stat(\"$TMP.diff\"); print int(\\$S[7] / 1024);"`
-	unset BLOCKSIZE
-	if [ $tmpk -lt $MAXSZ ] ; then
-	    MAXSZ=0
-	fi
+		BLOCKSIZE=1024; export BLOCKSIZE
+		tmpk=`perl -e "my(@S) = stat(\"$TMP.diff\"); print int(\\$S[7] / 1024);"`
+		unset BLOCKSIZE
+		[ $tmpk -lt $MAXSZ ] && MAXSZ=0
     fi
     if [ $MAXSZ -eq 0 ] ; then
-	(
-	  echo "To: $mailrcpt"
-	  echo "Subject: $subject"
-	  echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
-	  echo ""
-	  cat $TMP.diff
-	) | $SENDMAIL -t $MAILOPTS
-    else
-	CDIR=`pwd`
-	SDIR=${TMPDIR:=/tmp}/rancid.$GROUP.$$.mail
-	error=`mkdir $SDIR`
-	if [ $? -ne 0 ] ; then
-	    echo "Could not create $SDIR directory" >&2
-	    echo $error >&2
-	else
-	    cd $SDIR
-	    split -b${MAXSZ}k $TMP.diff
-	    nfiles=`ls | wc -l | sed -e 's/^ *//' |cut -d' ' -f1`
-	    n=0
-	    dt=`perl -e 'print time();'`
-	    for file in `ls`; do
-		n=`expr $n + 1`
-		MSGID="<$dt.RANCID$GROUP$$${nfiles}${n}@`hostname`>"
 		(
-		echo "To: $mailrcpt"
-		echo "Subject: $n of ${nfiles}: $subject"
-		echo "Message-Id: $MSGID"
-		if [ $n -gt 1 ] ; then
-		    echo "References: $LASTIDS"
+		  echo "To: $mailrcpt"
+		  echo "Subject: $subject"
+		  echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
+		  echo ""
+		  cat $TMP.diff
+		) | @SENDMAIL@ -t $MAILOPTS
+    else
+		CDIR=`pwd`
+		SDIR=${TMPDIR:=/tmp}/rancid.$GROUP.$$.mail
+		error=`mkdir $SDIR`
+		if [ $? -ne 0 ] ; then
+			echo "Could not create $SDIR directory" >&2
+			echo $error >&2
+		else
+			cd $SDIR
+			split -b${MAXSZ}k $TMP.diff
+			nfiles=`ls | wc -l | sed -e 's/^ *//' |cut -d' ' -f1`
+			n=0
+			dt=`perl -e 'print time();'`
+			ls -1 | {
+				while read -r file; do
+					n=$(expr $n + 1)
+					MSGID="<$dt.RANCID$GROUP$$${nfiles}${n}@`hostname`>"
+					(
+						echo "To: $mailrcpt"
+						echo "Subject: $n of ${nfiles}: $subject"
+						echo "Message-Id: $MSGID"
+						[ $n -gt 1 ] && echo "References: $LASTIDS"
+						echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
+						echo ""
+						cat $file
+					) | @SENDMAIL@ -t $MAILOPTS
+					LASTIDS="$LASTIDS $MSGID"
+					if [ $n -lt $nfiles ]; then
+						# this just tries to make the msgs order right in MUAs
+						sleep 1
+					fi
+				done
+			}
+			cd $CDIR
+			rm -rf $SDIR
 		fi
-		echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
-		echo ""
-		cat $file
-		) | $SENDMAIL -t $MAILOPTS
-		LASTIDS="$LASTIDS $MSGID"
-		if [ $n -lt $nfiles ]; then
-		    # this just tries to make the msgs order right in MUAs
-		    sleep 1
-		fi
-	    done
-	    cd $CDIR
-	    rm -rf $SDIR
-	fi
     fi
 fi
 
@@ -711,22 +713,20 @@ fi
 # hours, mail out a list of them.
 cd $DIR/configs
 rm -f $DIR/routers.failed
-if [ "X$OLDTIME" = "X" ] ; then
-    OLDTIME=24
-fi
-@PERLV@ -F\; -ane "{\$t = (stat(\$F[0]))[9]; print \`ls -ld \$F[0]\`
+[ -z $OLDTIME ] && OLDTIME=24
+@PERLV@ -F\; -ane "{chomp(@F);\$file = \"\$F[3]/\$F[0]\";\$t = (stat(\$file))[9]; print \`ls -ld \$file\`
 	if (time() - \$t >= $OLDTIME*60*60);}" $devlistfile | sort -u > $DIR/routers.failed
 if [ -s $DIR/routers.failed ] ; then
 	(
-	  echo "To: $adminmailrcpt"
-	  echo "Subject: config fetcher problems - $GROUP"
-	  echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
-	  echo ""
-	  echo "The following routers have not been successfully contacted for"
-	  echo "more than $OLDTIME hours."
-
-	  cat $DIR/routers.failed
-	) | $SENDMAIL -t $MAILOPTS
+		echo "To: $adminmailrcpt"
+		echo "Subject: config fetcher problems - $GROUP"
+		echo "$MAILHEADERS" | awk '{L = "";LN = $0;while (LN ~ /\\n/) { I = index(LN,"\\n");L = L substr(LN,0,I-1) "\n";LN = substr(LN,I+2,length(LN)-I-1);}print L LN;}'
+		echo ""
+		echo "The following routers have not been successfully contacted for"
+		echo "more than $OLDTIME hours."
+	
+		cat $DIR/routers.failed
+	) | @SENDMAIL@ -t $MAILOPTS
 fi
 
 # Cleanup

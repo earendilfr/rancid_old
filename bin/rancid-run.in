@@ -48,13 +48,14 @@
 ENVFILE="@sysconfdir@/rancid.conf"
 
 TMPDIR=${TMPDIR:=/tmp}; export TMPDIR
+LOG_BY_GRP=1
 
 # control_rancid argv
 CR_ARGV=""; export CR_ARGV
 
 # print a usage message to stderr
 pr_usage() {
-    echo "usage: $0 [-V] [-f config_file] [-r device_name] [-m mail rcpt] [group [group ...]]" >&2;
+    echo "usage: $0 [-d] [-V] [-f config_file] [-r device_name] [-m mail rcpt] [group [group ...]]" >&2;
 }
 
 # command-line options
@@ -92,6 +93,10 @@ if [ $# -ge 1 ] ; then
 	    CR_ARGV="$CR_ARGV -r $1"; export CR_ARGV
 	    shift
 	    ;;
+        -d)
+            shift
+            LOG_OUT="/dev/stderr"
+            ;;
 	--)
 	    shift; break;
 	    ;;
@@ -113,6 +118,13 @@ fi
 
 . $ENVFILE
 
+if [ "x$LOG_OUT" != "x" ]; then
+    LOG_BY_GRP=0;
+elif [ "x$LOG_OUT" == "x" -a "x$LOGFILE" != "x" ]; then
+    LOG_OUT="$LOGDIR/$LOGFILE"
+    LOG_BY_GRP=0
+fi
+
 # SENDMAIL location
 SENDMAIL=${SENDMAIL:=sendmail};
 
@@ -124,12 +136,20 @@ elif [ "$LIST_OF_GROUPS" = "" ] ; then
 fi
 
 if [ ! -d $LOGDIR ] ; then
-    mkdir $LOGDIR || (echo "Could not create log directory: $LOGDIR"; exit 1)
+    mkdir -m $UMASK -p $LOGDIR || (echo "Could not create log directory: $LOGDIR"; exit 1)
+fi
+
+if [ ! -d $TMPDIR ]; then
+    mkdir -m $UMASK -p $TMPDIR || (echo "Could not create TMP directory: $TMPDIR"; exit 1)
 fi
 
 for GROUP in $LIST_OF_GROUPS
 do
 
+    if [ $LOG_BY_GRP -eq 1 ]; then
+        LOG_OUT="$LOGDIR/$GROUP-$(date +%Y%m%d).$(($(ls -1f $LOGDIR/$GROUP-$(date +%Y%m%d)* 2> /dev/null | wc -l) + 1))"
+    fi
+    
     LOCKFILE=$TMPDIR/.$GROUP.run.lock
 
     (
@@ -182,5 +202,5 @@ END
 
 	echo
 	echo ending: `date`
-    ) >$LOGDIR/$GROUP.`date +%Y%m%d.%H%M%S` 2>&1
+    ) > $LOG_OUT 2>&1
 done

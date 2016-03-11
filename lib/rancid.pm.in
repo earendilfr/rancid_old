@@ -56,6 +56,16 @@ our @EXPORT = qw($VERSION $devtype $script $lscript @modules $inloop
 
 BEGIN {
     $VERSION = '@VERSION@';
+    my $ip6 = eval {
+        require Socket;
+        Socket->VERSION(1.95);
+        Socket->import( 'inet_pton' );
+        1;
+    } || eval {
+        require Socket6;
+        Socket6->import( 'inet_pton' );
+        1;
+    };
 }
 
 # initialize common rancid parameters and handle command-line arguments.

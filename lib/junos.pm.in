@@ -20,6 +20,7 @@ $Exporter::Verbose=1;
 use rancid @VERSION@;
 
 our $ShowChassisSCB;			# Only run ShowChassisSCB() once
+our $found_chassis_hardware;
 
 @ISA = qw(Exporter rancid main);
 #our @EXPORT = qw($VERSION)
@@ -35,7 +36,7 @@ sub import {
 sub init {
     # add content lines and separators
     ProcessHistory("","","","#RANCID-CONTENT-TYPE: $devtype\n#\n");
-
+    $found_chassis_hardware = 0;
     0;
 }
 
@@ -241,8 +242,9 @@ sub ShowChassisHardware {
     ProcessHistory("","","","# $_");
     while (<$INPUT>) {
 	tr/\015//d;
-	last if (/^$prompt/);
+        if (/^$prompt/) { $found_chassis_hardware=1;last; }
 	return 1 if (/^aborted!/i);
+        return(0) if ($found_chassis_hardware);
 	next if (/^system (shutdown message from|going down )/i);
 	next if (/^\{(master|backup)(:\d+)?\}/);
 
