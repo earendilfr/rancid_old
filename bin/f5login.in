@@ -2,7 +2,7 @@
 ##
 ## $Id: clogin.in 3057 2015-03-13 20:32:14Z heas $
 ##
-## CKAGE@ @VERSION@
+## @PACKAGE@ @VERSION@
 ## Copyright (c) @COPYYEARS@ by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
