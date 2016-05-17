@@ -24,6 +24,7 @@ our $found_version;
 our $found_env;
 our $found_diag;
 our $found_module;
+our $found_boot;
 our $config_register;			# configuration register value
 
 our %hwbuf;				# defined in ShowContCbus
@@ -60,6 +61,7 @@ sub init {
     $found_env = 0;
     $found_diag = 0;
     $found_module = 0;
+    $found_boot = 0;
     $config_register = undef;		# configuration register value
 
     $supbootdisk = 0;			# skip sup-bootflash if sup-bootdisk
@@ -131,6 +133,66 @@ TOP: while(<$INPUT>) {
     }
 }
 
+# This routine parse the "show failover"
+sub ShowFailoverStatus {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowFailoverStatus: $_" if ($debug);
+
+    my $end = 0;
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^\s*$/);
+        return(1) if (/Line has invalid autocommand /);
+        return(1) if (/(invalid (input|command) detected|type help or )/i);
+        return(-1) if (/command authorization failed/i);
+        if ($end || /Active time:/) { next; }
+        elsif (/Stateful Failover Logical Update Statistics/) { $end = 1; next; }
+        else { ProcessHistory("FAILOVER","","","!$_"); }
+    }
+    ProcessHistory("FAILOVER","","","!\n");
+    return(0);
+}
+
+# This command parse the "show cdp entry" or "show cdp neighbores"
+sub ShowCdp {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowCdp: $_" if ($debug);
+    
+    my ($device_id,$device_ip,$type,$local_int,$rem_int) = ('','','','','');
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        if (/^$prompt/) {
+            if (length($device_id) && length($local_int)) {
+                ProcessHistory("CDP","keysort","$device_id",sprintf("! CDP Neighbor: %s [%s]:Type=%s / Local interface=%s / Remote interface=%s\n",$device_id,$device_ip,$type,$local_int,$rem_int));
+            }
+            last;
+        }
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^\s*$/);
+        return(1) if (/Line has invalid autocommand /);
+        return(1) if (/(invalid (input|command) detected|type help or )/i);
+        return(-1) if (/command authorization failed/i);
+        
+        if (/-------------------------/ && length($device_id) && length($local_int)) {
+            ProcessHistory("CDP","keysort","$device_id",sprintf("! CDP Neighbor: %s [%s]:Type=%s / Local interface=%s / Remote interface=%s\n",$device_id,$device_ip,$type,$local_int,$rem_int));
+            ($device_id,$device_ip,$type,$local_int,$rem_int) = ('','','','',''); 
+        }
+        $device_id = $1 if (/Device ID: (.*)/);
+        $device_ip = $1 if (/Entry address\(es\):/ && <$INPUT> =~ /IP address: ([0-9A-F\.:]*)/);
+        $type = $1 if (/Platform: (.*),\s*Capabilities: .*/);
+        if (/Interface: (.*),\s*Port ID \(outgoing port\): (.*)/) {
+            $local_int = $1;
+            $rem_int = $2;
+        }
+    }
+    ProcessHistory("CDP","","","!\n");
+    return(0);
+}
+
 # This routine parses "show version"
 sub ShowVersion {
     my($INPUT, $OUTPUT, $cmd) = @_;
@@ -176,24 +238,21 @@ sub ShowVersion {
 	/^This (PIX|platform) has an?\s+(.*)$/ &&
 	    ProcessHistory("COMMENTS","keysort","D1", "!$_") && next;
 	/^(Cisco )?IOS .* Software,? \(([A-Za-z0-9_-]*)\), .*Version\s+(.*)$/ &&
-	    ProcessHistory("COMMENTS","keysort","F1",
-		"!Image:$slave Software: $2, $3\n") && next;
+	    ProcessHistory("COMMENTS","keysort","F1","!Image:$slave Software: $2, $3\n") && next;
 	/^([A-Za-z-0-9_]*) Synced to mainline version: (.*)$/ &&
-	    ProcessHistory("COMMENTS","keysort","F2",
-		"!Image:$slave $1 Synced to mainline version: $2\n") && next;
+	    ProcessHistory("COMMENTS","keysort","F2","!Image:$slave $1 Synced to mainline version: $2\n") && next;
 	/^Compiled (.*)$/ &&
-	    ProcessHistory("COMMENTS","keysort","F3",
-		"!Image:$slave Compiled: $1\n") && next;
+	    ProcessHistory("COMMENTS","keysort","F3","!Image:$slave Compiled: $1\n") && next;
 	/^ROM: (IOS \S+ )?(System )?Bootstrap.*(Version.*)$/ &&
-	    ProcessHistory("COMMENTS","keysort","G1",
-		"!ROM Bootstrap: $3\n") && next;
+	    ProcessHistory("COMMENTS","keysort","G1","!ROM Bootstrap: $3\n") && next;
 	if (/^Hardware:\s+(.*), (.* RAM), CPU (.*)$/) {
-	    ProcessHistory("COMMENTS","keysort","A1",
-		"!Chassis type: $1 - a PIX\n");
-	    ProcessHistory("COMMENTS","keysort","A2",
-		"!CPU: $3\n");
+	    ProcessHistory("COMMENTS","keysort","A1","!Chassis type: $1 - a PIX\n");
+	    ProcessHistory("COMMENTS","keysort","A2","!CPU: $3\n");
 	    ProcessHistory("COMMENTS","keysort","B1", "!Memory: $2\n");
 	}
+        elsif (/^Hardware:\s+(.*)$/) {
+            ProcessHistory("COMMENTS","keysort","A1","!Chassis type: $1 - a PIX\n");
+        }
 	/^serial number:\s+(.*)$/i &&
 	    ProcessHistory("COMMENTS","keysort","C1", "!Serial Number: $1\n") &&
 	    next;
@@ -208,15 +267,15 @@ sub ShowVersion {
 	/^Flash(\s+\S+)+ \@ 0x\S+,\s+(\S+)/ &&
 	    ProcessHistory("COMMENTS","keysort","B2", "!Memory: Flash $2\n") &&
 	    next;
-	# 3750 switch stacks
-	next if (/^Model revision number/ && $type eq "3750");
-	next if (/^Motherboard/ && $type eq "3750");
-	next if (/^Power supply/ && $type eq "3750");
-	/^Model number                    : (.*)$/ && $type eq "3750" &&
-	ProcessHistory("COMMENTS","keysort","C2", "!Model number:  $1\n") &&
+	# 3750/3650 switch stacks
+	next if (/^Model revision number/i && ($type eq "3750" || $type eq "3650"));
+	next if (/^Motherboard/i && ($type eq "3750" || $type eq "3650"));
+	next if (/^Power supply/i && ($type eq "3750" || $type eq "3650"));
+	/^Model number\s+: (.*)$/i && ($type eq "3750" || $type eq "3650") &&
+	    ProcessHistory("COMMENTS","keysort","C2", "!Model number:  $1\n") &&
  	    next;
-	/^System serial number            : (.*)$/ && $type eq "3750" &&
-	ProcessHistory("COMMENTS","keysort","C2", "!Serial number: $1\n") &&
+	/^System serial number\s+: (.*)$/i && ($type eq "3750" || $type eq "3650") &&
+	    ProcessHistory("COMMENTS","keysort","C2", "!Serial number: $1\n") &&
  	    next;
 	# CatOS 3500xl stuff
 	/^system serial number\s*:\s+(.*)$/i &&
@@ -325,6 +384,8 @@ LINE:		while (<$INPUT>) {
 		$type = "3600";
 	    } elsif ($proc =~ /^37/) {
 		$type = "3700";
+            } elsif ( $proc =~ /WS-C365/) {
+                $type = "3650";
             } elsif ( $proc =~ /WS-C375/) {
                 $type = "3750";
 	    } elsif ($proc =~ /^38/) {
@@ -430,6 +491,33 @@ LINE:		while (<$INPUT>) {
 	    next;
 	}
     }
+    return(0);
+}
+
+sub ShowNP3AclCount {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+
+    print STDERR "    In ShowNP3AclCount: $_" if ($debug);
+    my ($acl_count,$acl_max,$nat_count,$nat_max);
+    
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s+\^$/);
+        return(1) if (/Line has invalid autocommand /);
+        return(1) if (/(invalid (input|command|parameter) detected|type help or )/i);
+        return(1) if (/Incomplete command/);
+
+        $acl_count = $1 if (/CLS ACL Rule Count\s+:\s+(\d+)/);
+        $acl_max = $1 if (/CLS ACL Rule MAX\s+:\s+(\d+)/);
+        $nat_count = $1 if (/CLS Policy NAT Rule Count\s+:\s+(\d+)/);
+        $nat_max = $1 if (/CLS Policy NAT Rule MAX\s+:\s+(\d+)/);
+    }
+
+    ProcessHistory("COMMENTS","","",sprintf("! CLS ACL Rule: %.2f%% (%s/%s)\n",$acl_count/$acl_max*100,$acl_count,$acl_max));
+    ProcessHistory("COMMENTS","","",sprintf("! CLS NAT Rule: %.2f%% (%s/%s)\n",$nat_count/$nat_max*100,$nat_count,$nat_max));
+    ProcessHistory("COMMENTS","","","!\n");
     return(0);
 }
 
@@ -884,15 +972,18 @@ sub ShowBoot {
     # otherwise pick up bootflash.
     print STDERR "    In ShowBoot: $_" if ($debug);
 
+    my $in_bootflash = 0;
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
+        return(1) if ($cmd eq "show boot system" && $type eq "3750");
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	next if (/^\s+\^$/);
 	return(1) if (/Line has invalid autocommand /);
 	return(1) if (/(invalid (input|command) detected|type help or )/i);
 	return(1) if (/Ambiguous command/i);
 	return(1) if (/(Open device \S+ failed|Error opening \S+:)/);
+        return(0) if ($found_boot);
 	return(-1) if (/command authorization failed/i);
 	# the pager can not be disabled per-session on the PIX
 	if (/^(<-+ More -+>)/) {
@@ -904,7 +995,8 @@ sub ShowBoot {
 	if (!$H0) {
 	    $H0 = 1; ProcessHistory("COMMENTS","keysort","H0","!\n");
 	}
-	if ($type !~ /^(12[04]|7)/) {
+
+        if ($type !~ /^(12[04]|7)/) {
 	    if ($type !~ /^(29|35)00/) {
 		ProcessHistory("COMMENTS","keysort","H2","!BootFlash: $_");
 	    } else {
@@ -914,6 +1006,7 @@ sub ShowBoot {
 	    ProcessHistory("COMMENTS","keysort","H1","!Variable: $_");
 	}
     }
+    $found_boot = 1;
     ProcessHistory("COMMENTS","","","!\n");
     return(0);
 }
@@ -1737,6 +1830,7 @@ sub ShowModule {
 	last if (/online diag status/i);
 	if (/^$prompt/) { $found_module = 1; last; }
 	next if (/^(\s*|\s*$cmd\s*)$/);
+        return(0) if ($found_module);
 	return(-1) if (/command authorization failed/i);
 	# the pager can not be disabled per-session on the PIX
 	if (/^(<-+ More -+>)/) {
