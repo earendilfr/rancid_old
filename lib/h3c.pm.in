@@ -1,0 +1,408 @@
+package h3c;
+##
+## $Id: h3c.pm.in 2953 2014-11-27 00:26:58Z heas $
+##
+## @PACKAGE@ @VERSION@
+@copyright@
+#
+#  RANCID - Really Awesome New Cisco confIg Differ
+#
+#  h3c.pm - H3C Comware rancid procedures
+#
+
+use 5.010;
+use strict 'vars';
+use warnings;
+no warnings 'uninitialized';
+require(Exporter);
+our @ISA = qw(Exporter);
+
+use rancid @VERSION@;
+
+our $found_hardware;
+our $filter_line_regex;
+our $filter_error;
+our $filter_deny;
+
+@ISA = qw(Exporter rancid main);
+#our @EXPORT = qw($VERSION)
+
+# load-time initialization
+sub import {
+    0;
+}
+
+# post-open(collection file) initialization
+sub init {
+    # add content lines and separators
+    ProcessHistory("","","","#RANCID-CONTENT-TYPE: $devtype\n");
+    ProcessHistory("COMMENTS","","","#\n");
+    # Variable init
+    $found_hardware = 0;
+    $filter_line_regex = qr/(\033\133(\064\062|\061\066)\104(|\s+\033\133(\064\062|\061\066)\104)|\s*-+ More -+\s*|^               |Synchronization is finished\.)/i;
+    $filter_error = qr/((% )?(Too many parameters|Unrecognized command|Wrong parameter) found at '\^' position|% Wrong device .+)/i;
+    $filter_deny = qr/Permission denied\./i;
+
+    0;
+}
+
+# main loop of input of device output
+sub inloop {
+    my($INPUT, $OUTPUT) = @_;
+    my($cmd, $rval);
+
+TOP: while (<$INPUT>) {
+        tr/\015//d;
+        if (/[\]>#]\a?\s*quit/) {
+            $clean_run = 1;
+            last;
+        }
+        if (/^Error:/) {
+            print STDOUT ("$host h3clogin error: $_");
+            print STDERR ("$host h3clogin error: $_") if ($debug);
+            $clean_run=0;
+            last;
+        }
+        while (/[\]>#]\s*($cmds_regexp)\s*$/) {
+            $cmd = $1;
+            if (!defined($prompt)) {
+                $prompt = ($_ =~ /^([^\]>#]+[\]>]\a?)/)[0];
+                $prompt =~ s/([][\}\{)(\\])/\\$1/g;
+                print (STDERR "PROMPT MATCH: $prompt\n") if ($debug);
+            }
+            print (STDERR "HIT COMMAND:$_") if ($debug);
+            if (! defined($commands{$cmd})) {
+                print STDERR "$host: found unexpected command - \"$cmd\"\n";
+                $clean_run = 0;
+                last TOP;
+            }
+            $rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
+            delete($commands{$cmd});
+            if ($rval == -1) {
+                $clean_run = 0;
+                last TOP;
+            }
+            print (STDERR "clean_run=$clean_run | found_end=$found_end\n") if ($debug);
+        }
+    }
+}
+
+## This routine processes a "display"
+sub DisplayGeneric {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayGeneric: $_" if ($debug);
+    
+    ProcessHistory("COMMENTS", "", "", "#\n");
+
+    while(<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+
+        $_ = filter_lines($_);
+        ProcessHistory("COMMENTS","","","# $_");
+    }
+
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);   
+}
+
+## the routine processes a "display local-user" command
+sub DisplayLocalUser {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayLocalUser: $_" if ($debug);
+
+    while(<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+
+        $_ = filter_lines($_);
+        next if (/Total [0-9]+ local user\(s\) matched\./);
+
+        s/\s+Current AccessNum:.+$//;
+        ProcessHistory("COMMENTS","","","# $_");
+    }
+    
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);
+}
+
+## the routine processes a "display version" command
+sub DisplayVersion {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayVersion: $_" if ($debug);
+
+    while(<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+        
+        $_ = filter_lines($_);
+        next if (/^(Uptime is \d|.+ [Uu]ptime is \d).+$/);
+        next if (/^Last reboot.+/);
+
+        ProcessHistory("COMMENTS","","","# $_");
+    }
+
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);
+}
+## the routine processes a "display power" and a "display poe pse" command
+sub DisplayPower {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayPower: $_" if ($debug);
+
+    while(<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+ 
+        $_ = filter_lines($_);       
+        next if (/^(\s+Input Power).+$/);
+        if (/Power\s+(\d+)/) {
+            my $state = $1 if (<$INPUT> =~ /State\s*: (.*)/);
+            my $type = $1 if (<$INPUT> =~ /Type\s*: (.*)/);
+            ProcessHistory("COMMENTS","","","# Power $1: $state | $type\n");
+            next;
+        }
+
+        next if (/^PSE (Total Power Consumption|Available Power|Peak Value|Average Value).+$/);
+        next if (/^PSE ((Current|Average|Peak|Max) Power|Remaining Guaranteed).+$/);
+
+        ProcessHistory("COMMENTS","","","# $_");
+    }
+
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);
+}
+
+## The routine processes a "display transceiver interface" command
+sub DisplayTransceiver {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayTransceiver: $_" if ($debug);
+
+    my $trans_present = 1;
+    while(<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+        
+        $_ = filter_lines($_);
+        next if (/^Error: The transceiver is absent/);
+        next if (/^Error: The combo port is inactive/);
+
+        ProcessHistory("COMMENTS","","","# $_");
+    }
+
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);
+}
+
+## The routine processes a "display ntp-service" command
+sub DisplayNtp {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayNtp: $_" if ($debug);
+
+    while(<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+
+        $_ = filter_lines($_);
+        next unless m/(Clock status|Clock stratum|Reference clock ID)/i;
+
+        ProcessHistory("COMMENTS", "", "", "# $_");
+    }
+
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);
+}
+
+## The routine processes a "display ospf" command
+sub DisplayOspf {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayOspf: $_" if ($debug);
+
+    while(<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+
+        next if (/^\s+SPF (Computation|Scheduled|calculation) Count:.+$/i);
+        ProcessHistory("COMMENTS","","","# $_");
+    }
+
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);
+}
+
+## This routine processes a "dir" command"
+sub DisplayDir {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print (STDERR "    In DisplayDir: $_") if ($debug);
+
+    while(<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+
+        $_ = filter_lines($_);
+        # Remove filenames that are updated frequently
+        next if (/(logfile\.log|lauth\.dat|ifindex\.dat|startup\.mdb|private-data\.txt|.+ KB total \(.+ KB free|\.trash)/);
+        # We remove the index part of the file
+        s/\s*\d+\s+(.*)/$1/;
+        ProcessHistory("File","aclsort","","# $_");
+    }
+
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);
+}
+
+## This routine processes a "display vlan all"
+sub DisplayVlan {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayVlan: $_" if ($debug);
+
+    ProcessHistory("COMMENTS", "", "", "#\n");
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+
+        $_ = filter_lines($_);
+        next if (!/^\s*(VLAN ID|VLAN Type|Description|Name):/);
+        if (/^\s*VLAN ID: ([0-9]*)/) { ProcessHistory("VLAN","","","# VLAN ID: $1\n"); }
+        else { ProcessHistory("VLAN","","","#\t$_"); }
+    }
+
+    # Add a blank comment line to the output buffer
+    ProcessHistory("COMMENTS", "", "", "#\n");
+    return(0);
+}
+
+## This routine processes a "display lldp nei"
+sub DisplayLLDPNei {
+    my($INPUT, $OUTPUT, $cmd) = @_; 
+    print STDERR "    In DisplayLLDPNei: $_" if ($debug);
+
+    my ($device_id,$device_ip,$local_int,$rem_int) = ('','','','');
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        $_ = filter_lines($_);
+        last if (/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_deny/);
+ 
+        $_ = filter_lines($_);       
+        next if (!/(Management address|Port ID|System name|(LLDP|CDP) neighbor-information of port)/);
+
+        if (/(LLDP|CDP) neighbor-information of port [0-9]+\s*\[(.*)\]/) {
+            if (length($device_id) && length($local_int)) {
+                ProcessHistory("LLDP","keysort","$device_id",sprintf("# LLDP Neighbor: %s [%s]: Local interface=%s / Remote interface=%s\n",$device_id,$device_ip,$local_int,$rem_int));
+            }
+            ($device_id,$device_ip,$local_int,$rem_int) = ('','','','');
+            $local_int = $2;
+        }
+        $device_ip = $1 if (/Management address\s*:\s*(.*)/);
+        $rem_int = $1 if (/Port ID\s*:\s*(.*)/);
+        $device_id = $1 if (/System name\s*:\s*(.*)/);
+    }
+    
+    ProcessHistory("LLDP","","","#\n");
+    return(0);
+}
+
+## This routine processes a "display current"
+sub DisplayCurrent {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In DisplayCurrent: $_" if ($debug);
+
+    # We aren't chomping these lines
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if(/^\s*$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        next if (/^\s*\^$/);
+        return(1) if (/$filter_error/);
+        return(0) if ($found_end);
+        return(-1) if (/$filter_deny/);
+
+        $_ = filter_lines($_);
+        return(0) if ($found_end);
+
+        # Filter out some sensitive data:
+        if ( $filter_commstr && /^ ?(snmp-agent (usm-user|community (read|write)) )(\S+)/) {
+            ProcessHistory("","","","#$1 <removed>$'");
+            next;
+        }
+        if ( $filter_pwds >= 1 &&
+            /^ ?(password (?:simple|cipher) )(\S+)/ ||
+            /^ ?(super password( level \d)? (cipher|simple) )(\S+)/ ||
+            /^ ?(set authentication password (cipher|simple) )(\S+)/ ||
+            /^ ?(key (?:authentication|authorization|accounting) (cipher|simple) )(\S+)/) {
+            ProcessHistory("","","","#$1<removed>\n");
+            next;
+        }
+
+        # Filter mac addresses dynamically added to config
+        next if (/^ ?mac-address security.+$/);
+        ProcessHistory("", "", "", "$_");
+
+        # end of config
+        if (/^return/) {
+            $found_end = 1;
+            return(0);
+        }
+    }
+
+    return(0);
+}
+
+sub filter_lines {
+    my ($line) = @_;
+
+    # Filter out some ANSI crud as a result of us not being able to turn
+    # off per-session terminal paging:
+    #s/^\033\[42D +\033\[42D(.+)$/$1/;
+    # hwlogin+mods:
+    #s/\033\133\064\062\104\s*\033\133\064\062\104//g;
+    $line =~ s/$filter_line_regex//g;
+    $line =~ s/.*\[37D(.*)/$1/g;    # MA5600
+
+    return $line;
+}
+
+1;

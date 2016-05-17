@@ -88,6 +88,7 @@ cisco;command;ios::ShowEnv;show env all
 cisco;command;ios::ShowRSP;show rsp chassis-info
 cisco;command;ios::ShowGSR;show gsr chassis
 cisco;command;ios::ShowGSR;show diag chassis-info
+cisco;command;ios::ShowBoot;show boot system
 cisco;command;ios::ShowBoot;show boot
 cisco;command;ios::ShowBoot;show bootvar
 cisco;command;ios::ShowBoot;show variables boot
@@ -137,14 +138,17 @@ cisco;command;ios::ShowSpeVersion;show spe version
 cisco;command;ios::ShowC7200;show c7200
 cisco;command;ios::ShowCellular;show cellular 0 profile;Cellular modem
 cisco;command;ios::ShowInventory;show inventory raw
+cisco;command;ios::ShowNP3AclCount;show np 3 acl count
 cisco;command;ios::ShowVTP;show vtp status
 cisco;command;ios::ShowVLAN;show vlan
 cisco;command;ios::ShowVLAN;show vlan-switch
+cisco;command;ios::ShowCdp;show cdp entry *
 cisco;command;ios::ShowDetail;show switch detail
 cisco;command;ios::ShowSDM;show sdm prefer
 cisco;command;ios::ShowMTU;show system mtu
 cisco;command;ios::ShowDebug;show debug
 cisco;command;ios::ShowShun;show shun;ASA/PIX
+cisco;command;ios::ShowFtGroup;show ft group brief
 cisco;command;ios::WriteTerm;more system:running-config;ASA/PIX
 cisco;command;ios::WriteTerm;show running-config view full;workaround for role-based CLI
 cisco;command;ios::WriteTerm;show running-config
@@ -182,6 +186,7 @@ cisco-nx;command;nxos::ShowModule;show module xbar
 cisco-nx;command;nxos::ShowInventory;show inventory
 cisco-nx;command;nxos::ShowVTP;show vtp status;drop?
 cisco-nx;command;nxos::ShowVLAN;show vlan
+cisco-nx;command;nxos::ShowCdp;show cdp entry all
 cisco-nx;command;nxos::ShowDebug;show debug
 cisco-nx;command;nxos::ShowCores;show cores vdc-all
 cisco-nx;command;nxos::ShowProcLog;show processes log vdc-all
@@ -314,8 +319,19 @@ foundry;command;foundry::ShowFlash;show flash
 foundry;command;foundry::WriteTerm;write term
 foundry;command;foundry::WriteTerm;show running-config
 #
-h3c;script;h3crancid
+h3c;script;rancid -t h3c
 h3c;login;h3clogin
+h3c;module;h3c
+h3c;inloop;h3c::inloop
+h3c;command;DisplayVersion;display version
+h3c;command;DisplayGeneric;dis device manuinfo
+h3c;command;DisplayGeneric;display boot-loader
+h3c;command;DisplayGeneric;display startup
+h3c;command;DisplayGeneric;display irf
+h3c;command;DisplayVlan;display vlan all
+h3c;command;DisplayTransceiver;display transceiver interface
+h3c;command;DisplayLLDPNei;display lldp neighbor-information
+h3c;command;DisplayCurrent;display current-configuration
 #
 hitachi;script;htrancid
 hitachi;login;htlogin
