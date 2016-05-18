@@ -580,14 +580,6 @@ foreach router [lrange $argv $i end] {
 		set prompt "(>|#| \\(enable\\))"
 	}
 
-	# look for forceenable option in .cloginrc & cmd-line
-	set fe [find forceenable $router]
-	if { "$fe" == "1" || $force_enable } {
-		set force_enable 1
-	} else {
-		set force_enable 0
-	}
-	
 	# look for autoenable option in .cloginrc & cmd-line
 	set ae [find autoenable $router]
 	if { "$ae" == "1" || $avautoenable } {
@@ -724,7 +716,7 @@ foreach router [lrange $argv $i end] {
 	if { [regexp -- "(#| \\(enable\\))" $prompt_match junk] == 1} {
 		set enable 0
 	}
-	if { $enable || $force_enable } {
+	if { $enable } {
 		if {[do_enable $enauser $enapasswd]} {
 			if { $do_command || $do_script } {
 				incr exitval
