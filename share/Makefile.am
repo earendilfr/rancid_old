@@ -3,35 +3,47 @@
 
 ## $Id: Makefile.am 2997 2014-12-30 19:20:07Z heas $
 ##
-## Copyright (C) 1997-2015 by Terrapin Communications, Inc.
+## Copyright (c) 1997-2015 by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
 ## Please see the file COPYING for the text of the license.
-##
 
-AUTOMAKE_OPTIONS=foreign no-dependencies
+#AUTOMAKE_OPTIONS=foreign no-dependencies
+AUTOMAKE_OPTIONS=foreign
 
-@SET_MAKE@
+pkgdata_SCRIPTS= rancid-cvspurge rtrfilter downreport
+dist_pkgdata_SCRIPTS=getipacctg
+dist_pkgdata_DATA=README.misc cisco-load.exp cisco-reload.exp \
+	index.html lgnotes.html
 
-pkgdata_DATA = COPYING CHANGES FAQ README README.lg UPGRADING cloginrc.sample
-EXTRA_DIST = BUGS Todo configure configure.vers install-sh \
-	mkinstalldirs Makefile.in Todo $(pkgdata_DATA)
-#DIST_COMMON = 
+EXTRA_DIST = rancid-cvspurge.in rancid.spec rtrfilter.in downreport.in
 
-# '.' is here (and at the beginnging of the macro) so that distclean-recursive
-# will run make distclean in . after the other dirs (preserving Makefile) and
-# mkinstalldirs will create the install destination before descending into
-# the subdirs.
-SUBDIRS = . include etc lib bin man share
+CLEANFILES= rancid-cvspurge downreport
 
-# sysconfdir is here because etc/Makefile uses a script to be careful about
-# installing rancid.conf, not over-writing an existing one.
-DIRS2_CREATE=$(DESTDIR)$(prefix) $(DESTDIR)$(sysconfdir)
-if MK_LCLSTATEDIR
-DIRS2_CREATE+=$(DESTDIR)$(localstatedir)
-endif
-install-data-hook:
-	$(mkinstalldirs) $(DIRS2_CREATE);
+all:
 
-distclean-local:
-	-rm -rf $(top_srcdir)/autom4te.cache
+# auto_edit does the autoconf variable substitution.  This allows the
+# substitution to have the full expansion of the variables, e.g.: $sysconfdir
+# will be /prefix/etc instead of ${prefix}/etc.
+#
+# This is a bit of a PITA, but is the method recommended by the autoconf
+# documentation.
+auto_edit = sed \
+	-e 's,@prefix\@,$(prefix),g' \
+	-e 's,@localstatedir\@,$(localstatedir),g' \
+	-e 's,@sysconfdir\@,$(sysconfdir),g' \
+	-e 's,@pkgdatadir\@,$(pkgdatadir),g' \
+	-e 's,@ADMINMAILPLUS\@,$(ADMINMAILPLUS),g' \
+	-e 's,@MAILPLUS\@,$(MAILPLUS),g'
+
+downreport: Makefile $(srcdir)/downreport.in
+	rm -f downreport downreport.tmp; \
+	$(auto_edit) $(srcdir)/downreport.in >downreport.tmp; \
+	chmod +x downreport.tmp; \
+	mv downreport.tmp downreport
+
+rancid-cvspurge: Makefile $(srcdir)/rancid-cvspurge.in
+	rm -f rancid-cvspurge rancid-cvspurge.tmp; \
+	$(auto_edit) $(srcdir)/rancid-cvspurge.in >rancid-cvspurge.tmp; \
+	chmod +x rancid-cvspurge.tmp; \
+	mv rancid-cvspurge.tmp rancid-cvspurge
