@@ -714,7 +714,7 @@ fi
 cd $DIR/configs
 rm -f $DIR/routers.failed
 [ -z $OLDTIME ] && OLDTIME=24
-@PERLV@ -F\; -ane "{chomp(@F);\$file = \"\$F[3]/\$F[0]\";\$t = (stat(\$file))[9]; print \`ls -ld \$file\`
+@PERLV@ -F\; -ane "{chomp(@F);\$file = sprintf(\"\$F[4]%s\$F[0]\",length(\$F[4])?'/':'');\$t = (stat(\$file))[9]; print \`ls -ld \$file\`
 	if (time() - \$t >= $OLDTIME*60*60);}" $devlistfile | sort -u > $DIR/routers.failed
 if [ -s $DIR/routers.failed ] ; then
 	(
