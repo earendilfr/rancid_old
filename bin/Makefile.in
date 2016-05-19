@@ -503,6 +503,8 @@ jlogin: $(top_builddir)/config.status $(srcdir)/jlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 jerancid: $(top_builddir)/config.status $(srcdir)/jerancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+llogin: $(top_builddir)/config.status $(srcdir)/llogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mrancid: $(top_builddir)/config.status $(srcdir)/mrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mrvlogin: $(top_builddir)/config.status $(srcdir)/mrvlogin.in
