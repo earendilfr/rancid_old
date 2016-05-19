@@ -529,7 +529,9 @@ arbor.pm: arbor.pm.in
 dell.pm: dell.pm.in
 ciscowlc.pm: ciscowlc.pm.in
 eos.pm: eos.pm.in
+f5.pm: f5.pm.in
 foundry.pm: foundry.pm.in
+h3c.pm: h3c.pm.in
 ios.pm: ios.pm.in
 iosxr.pm: iosxr.pm.in
 junos.pm: junos.pm.in
