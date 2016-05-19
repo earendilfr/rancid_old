@@ -527,6 +527,7 @@ $(pkglib_in:%.in=%): Makefile $(top_builddir)/config.status
 acos.pm: acos.pm.in
 arbor.pm: arbor.pm.in
 dell.pm: dell.pm.in
+checkpoint.pm: checkpoint.pm.in
 ciscowlc.pm: ciscowlc.pm.in
 eos.pm: eos.pm.in
 f5.pm: f5.pm.in
