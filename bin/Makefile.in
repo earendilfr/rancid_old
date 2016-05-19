@@ -99,9 +99,9 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/include/config.h
 CONFIG_CLEAN_FILES = login_top control_rancid a10login agmrancid \
 	alogin arancid anlogin arrancid avologin avorancid blogin \
-	brancid cat5rancid clogin complogin cssrancid dllogin elogin \
-	erancid f5rancid f10rancid flogin fnlogin fnrancid hlogin \
-	hrancid htlogin htrancid jlogin jerancid mrancid mrvlogin \
+	brancid bntlogin bntrancid cat5rancid clogin complogin cssrancid dllogin elogin \
+	erancid f5login f10rancid flogin fnlogin fnrancid h3clogin hlogin \
+	hrancid htlogin htrancid jlogin jerancid llogin mrancid mrvlogin \
 	mtrancid mtlogin nlogin nrancid nslogin nsrancid panlogin \
 	prancid rblogin rivlogin rivrancid rrancid rtftpcopy srancid \
 	tlogin trancid xilogin xirancid xrancid wlogin zrancid
@@ -201,15 +201,16 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/a10login.in \
 	$(srcdir)/anlogin.in $(srcdir)/arancid.in \
 	$(srcdir)/arrancid.in $(srcdir)/avologin.in \
 	$(srcdir)/avorancid.in $(srcdir)/blogin.in \
+	$(srcdir)/bntlogin.in $(srcdir)/bntrancid.in \
 	$(srcdir)/brancid.in $(srcdir)/cat5rancid.in \
 	$(srcdir)/clogin.in $(srcdir)/complogin.in \
 	$(srcdir)/control_rancid.in $(srcdir)/cssrancid.in \
 	$(srcdir)/dllogin.in $(srcdir)/elogin.in $(srcdir)/erancid.in \
-	$(srcdir)/f10rancid.in $(srcdir)/f5rancid.in \
+	$(srcdir)/f10rancid.in $(srcdir)/f5login.in \
 	$(srcdir)/flogin.in $(srcdir)/fnlogin.in $(srcdir)/fnrancid.in \
-	$(srcdir)/hlogin.in $(srcdir)/hrancid.in $(srcdir)/htlogin.in \
-	$(srcdir)/htrancid.in $(srcdir)/jerancid.in \
-	$(srcdir)/jlogin.in $(srcdir)/login_top.in \
+	$(srcdir)/h3clogin.in $(srcdir)/hlogin.in $(srcdir)/hrancid.in \
+	$(srcdir)/htlogin.in $(srcdir)/htrancid.in $(srcdir)/jerancid.in \
+	$(srcdir)/jlogin.in $(srcdir)/login_top.in $(srcdir)/llogin.in \
 	$(srcdir)/mrancid.in $(srcdir)/mrvlogin.in \
 	$(srcdir)/mtlogin.in $(srcdir)/mtrancid.in $(srcdir)/nlogin.in \
 	$(srcdir)/nrancid.in $(srcdir)/nslogin.in \
@@ -351,10 +352,10 @@ top_srcdir = @top_srcdir@
 #AUTOMAKE_OPTIONS=foreign no-dependencies
 AUTOMAKE_OPTIONS = foreign
 bin_SCRIPTS = a10login agmrancid anlogin arancid arrancid avologin \
-	avorancid blogin brancid cat5rancid clogin complogin \
-	control_rancid cssrancid dllogin elogin erancid f5rancid \
-	f10rancid flogin fnlogin fnrancid hlogin hrancid htlogin \
-	htrancid jerancid jlogin mrancid mrvlogin mtlogin mtrancid \
+	avorancid blogin brancid bntlogin bntrancid cat5rancid clogin complogin \
+	control_rancid cssrancid dllogin elogin erancid f5login \
+	f10rancid flogin fnlogin fnrancid h3clogin hlogin hrancid htlogin \
+	htrancid jerancid jlogin llogin mrancid mrvlogin mtlogin mtrancid \
 	nlogin nrancid nslogin nsrancid panlogin plogin rancid rblogin \
 	rivlogin rivrancid rrancid rtftpcopy srancid tlogin trancid \
 	wlogin xilogin xirancid xrancid zrancid lg.cgi lgform.cgi \

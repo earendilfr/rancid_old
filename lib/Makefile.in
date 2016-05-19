@@ -271,8 +271,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign no-dependencies
 my_pkglibdir = $(pkglibdir)
-my_pkglib_DATA = rancid.pm acos.pm arbor.pm ciscowlc.pm dell.pm eos.pm \
-                 foundry.pm ios.pm iosxr.pm junos.pm mrv.pm nxos.pm panos.pm \
+my_pkglib_DATA = rancid.pm acos.pm arbor.pm checkpoint.pm ciscowlc.pm dell.pm eos.pm f5.pm \
+                 foundry.pm h3c.pm ios.pm iosxr.pm junos.pm mrv.pm nxos.pm panos.pm \
                  rbt.pm wavesvros.pm
 
 pkglib_in = $(my_pkglib_DATA:%=%.in)
