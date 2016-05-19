@@ -6104,6 +6104,8 @@ ac_config_files="$ac_config_files bin/avologin bin/avorancid"
 
 ac_config_files="$ac_config_files bin/blogin bin/brancid"
 
+ac_config_files="$ac_config_files bin/bntlogin bin/bntrancid"
+
 ac_config_files="$ac_config_files bin/cat5rancid bin/clogin"
 
 ac_config_files="$ac_config_files bin/complogin"
@@ -6114,13 +6116,15 @@ ac_config_files="$ac_config_files bin/dllogin"
 
 ac_config_files="$ac_config_files bin/elogin bin/erancid"
 
-ac_config_files="$ac_config_files bin/f5rancid"
+ac_config_files="$ac_config_files bin/f5login"
 
 ac_config_files="$ac_config_files bin/f10rancid"
 
 ac_config_files="$ac_config_files bin/flogin"
 
 ac_config_files="$ac_config_files bin/fnlogin bin/fnrancid"
+
+ac_config_files="$ac_config_files bin/h3clogin"
 
 ac_config_files="$ac_config_files bin/hlogin bin/hrancid"
 
