@@ -1,0 +1,224 @@
+package checkpoint;
+##
+## $Id: checkpoint.pm.in 3236 2016-05-18
+##
+## @PACKAGE@ @VERSION@
+@copyright@
+#
+#  RANCID - Really Awesome New Cisco confIg Differ
+#
+#  checkpoint.pm - Checkpoint rancid procedures
+
+use 5.010;
+use strict 'vars';
+use warnings;
+no warnings 'uninitialized';
+require(Exporter);
+our @ISA = qw(Exporter);
+
+use rancid @VERSION@;
+
+our $found_hardware;
+our $found_version;
+our $found_license;
+our $filter_error;
+
+@ISA = qw(Exporter rancid main);
+#our @EXPORT = qw($VERSION)
+
+# load-time initialization
+sub import {
+	0;
+}
+
+# post-open(collection file) initialization
+sub init {
+	# add content lines and separators
+	ProcessHistory("","","","#RANCID-CONTENT-TYPE: $devtype\n#\n");
+	$found_hardware = 0;
+	$found_version = 0;
+	$found_license = 0;
+	$filter_error = qr/(command not found|Invalid command)/i;
+	0;
+}
+
+# main loop of input of device output
+sub inloop {
+	my($INPUT, $OUTPUT) = @_;
+	my($cmd, $rval);
+
+TOP: while (<$INPUT>) {
+		tr/\015//d;
+		if (/#\s?exit$/) {
+			$clean_run = 1;
+			last;
+		}
+		if (/^Error:/) {
+			print STDOUT ("$host llogin error: $_");
+			print STDERR ("$host llogin error: $_") if ($debug);
+			$clean_run=0;
+			last;
+		}
+		while (/#\s*($cmds_regexp)\s*$/) {
+			$cmd = $1;
+			if (!defined($prompt)) {
+				$prompt = ($_ =~ /^([^#]+#)/)[0];
+				$prompt =~ s/([][}{)(\\])/\\$1/g;
+				print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
+			}
+			print STDERR ("HIT COMMAND:$_") if ($debug);
+			if (! defined($commands{$cmd})) {
+				print STDERR "$host: found unexpected command - \"$cmd\"\n";
+				$clean_run = 0;
+				last TOP;
+			}
+			$rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
+			delete($commands{$cmd});
+			if ($rval == -1) {
+				$clean_run = 0;
+				last TOP;
+			}
+			print (STDERR "clean_run=$clean_run | found_end=$found_end\n") if ($debug);
+		}
+	}
+}
+
+# This routine parses "dmidecode" and "system_info" command
+sub SystemInfo {
+	my($INPUT, $OUTPUT, $cmd) = @_;
+	print STDERR "    In Dmidecode: $_" if ($debug);
+	
+	while (<$INPUT>) {
+		tr/\015//d;
+		last if (/^$prompt/);
+		next if (/^(\s*|\s*$cmd\s*)$/);
+		
+		return(0) if ($found_hardware);
+		return(1) if (/$filter_error/);
+
+		if (/(System Information|Motherboard Information|Slot \d, Card Information)/) {
+			ProcessHistory("COMMENTS","","","!$1:\n");
+			while (<$INPUT>) {
+				tr/\015//d;
+				last if (/^(Handle 0x|\s*$)/);
+				ProcessHistory("COMMENTS","","","!  Manufacturer: $1\n") if (/^\s*Manufacturer:\s*(.*)/);
+				ProcessHistory("COMMENTS","","","!  Product: $1\n") if (/^\s*Product Name:\s*(.*)/);
+				ProcessHistory("COMMENTS","","","!  Serial Number: $1\n") if (/^\s*Serial Number:\s*(.*)/);
+				ProcessHistory("COMMENTS","","","!  Assembly Part Number: $1\n") if (/^\s*Assembly Part Number:\s*(.*)/);
+				ProcessHistory("COMMENTS","","","!  HW Revision: $1\n") if (/^\s*HW Revision:\s*(.*)/);
+			}
+		}
+	}
+
+	$found_hardware = 1;
+	ProcessHistory("COMMENTS","","","!\n");
+	return(0);
+}
+
+sub SystemInfo61K {
+	my($INPUT, $OUTPUT, $cmd) = @_;
+	print STDERR "    In SystemInfo61K: $_" if ($debug);
+
+	while(<$INPUT>) {
+		tr/\015//d;
+		last if (/^$prompt/);
+		next if (/^(\s*|\s*$cmd\s*)$/);
+
+		return(1) if (/$filter_error/);
+		
+		ProcessHistory("COMMENTS","","","! $_") if (/^chassis \d [A-Z0-9]* serial: .*/);
+		if (/^(\d)_(\d{2}):/) {
+			my $SGM = "chassis $1 SGM$2";
+			ProcessHistory("COMMENTS","","","! $SGM serial: $1\n") if (<$INPUT> =~ /Board Serial\s*: (.*)/);
+		}
+	}
+	ProcessHistory("COMMENTS","","","!\n");
+	return(0);
+}
+
+# This routine parses "fw ver" command
+sub ShowVer {
+	my($INPUT, $OUTPUT, $cmd) = @_;
+	print STDERR "    In ShowVer: $_" if ($debug);
+
+	while (<$INPUT>) {
+		tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+
+        return(0) if ($found_version);
+		return(1) if (/$filter_error/);
+
+		ProcessHistory("VERSION","","","!$_");
+	}
+	
+	$found_version = 1;
+	ProcessHistory("VERSION","","","!\n");
+	return(0);
+}
+
+# This routine parses "cplic print" command
+sub ShowLic {
+	my($INPUT, $OUTPUT, $cmd) = @_;
+	print STDERR "    In ShowLic: $_" if ($debug);
+
+	while (<$INPUT>) {
+		tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+
+		return(1) if (/$filter_error/);
+		return(0) if ($found_license);
+
+		if (/([0-9A-F:\.]*|[a-zA-Z0-9]*)\s*(never|\d{1,2}(Jan|Fev|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\d{4})\s*([0-9A-Za-z]*)\s*([A-Za-z0-9 -]*)/) {
+			ProcessHistory("LICENSE","","","! Host: $1 | Expiration: $2 | Signature: $4 | Feature: $5\n");
+			next;
+		}
+		if (/([0-9A-F:\.]*|[a-zA-Z0-9]*)\s*(never|\d{1,2}(Jan|Fev|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\d{4})\s*([A-Za-z0-9 -]*)/) {
+			ProcessHistory("LICENSE","","","! Host: $1 | Expiration: $2 | Feature: $4\n");
+			next;
+		}
+	}
+
+	$found_license = 1;
+	ProcessHistory("LICENSE","","","!\n");
+	return(0);
+}
+
+# This routine parses "clish -c 'show configuration'", "asg_config show" command
+sub ShowConfig {
+	my($INPUT, $OUTPUT, $cmd) = @_;
+	print STDERR "    In ShowConfig: $_" if ($debug);
+
+	while (<$INPUT>) {
+		tr/\015//d;
+		last if (/^$prompt/);
+		next if (/^(\s*|\s*$cmd\s*)$/);
+
+		return(1) if (/$filter_error/);
+		return(0) if ($found_end);
+
+		if (/(set expert-password-hash)\s*.*/ && $filter_pwds >= 1) {
+			ProcessHistory("CONF","","","!$1 <removed>\n");
+			next;
+		}
+		if (/(set user .* password-hash)\s*.*/ && $filter_pwds >= 1) {
+			ProcessHistory("CONF","","","!$1 <removed>\n");
+			next;
+		}
+		if (/(add aaa tacacs-servers priority \d server [0-9A-F:\.]* key) \S* (timeout \d)/ && $filter_pwds >= 1) {
+			ProcessHistory("CONF","","","!$1 <removed> $2\n");
+			next;
+		}
+		if (/(add snmp usm user .* security-level authNoPriv auth-pass-phrase-hashed) .*/ && $filter_pwds >= 1) {
+			ProcessHistory("CONF","","","!$1 <removed>\n");
+			next;
+		}
+		ProcessHistory("CONF","","","$_");
+	}
+	$found_end = 1;
+	return(0);
+}
+
+1;
+# ex: set tabstop=4 noexpandtab:
