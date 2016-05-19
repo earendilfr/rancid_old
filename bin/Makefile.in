@@ -459,6 +459,10 @@ avorancid: $(top_builddir)/config.status $(srcdir)/avorancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 blogin: $(top_builddir)/config.status $(srcdir)/blogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+bntlogin: $(top_builddir)/config.status $(srcdir)/bntlogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+bntrancid: $(top_builddir)/config.status $(srcdir)/bntrancid.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 brancid: $(top_builddir)/config.status $(srcdir)/brancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 cat5rancid: $(top_builddir)/config.status $(srcdir)/cat5rancid.in
@@ -475,7 +479,7 @@ elogin: $(top_builddir)/config.status $(srcdir)/elogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 erancid: $(top_builddir)/config.status $(srcdir)/erancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-f5rancid: $(top_builddir)/config.status $(srcdir)/f5rancid.in
+f5login: $(top_builddir)/config.status $(srcdir)/f5login.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 f10rancid: $(top_builddir)/config.status $(srcdir)/f10rancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -484,6 +488,8 @@ flogin: $(top_builddir)/config.status $(srcdir)/flogin.in
 fnlogin: $(top_builddir)/config.status $(srcdir)/fnlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 fnrancid: $(top_builddir)/config.status $(srcdir)/fnrancid.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+h3clogin: $(top_builddir)/config.status $(srcdir)/h3clogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 hlogin: $(top_builddir)/config.status $(srcdir)/hlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
