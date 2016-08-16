@@ -118,7 +118,7 @@ if ($opt_z) {
 	    s/^\s+//;
             my($router, $type, $state) = split('\;');
 	    foreach $j (@routers) {
-		if ($router eq $j) {
+		if ($router =~ /$j/i) {
 		    $devtype = $type;
 		    close(INPUT);
 		    goto FOUND;
