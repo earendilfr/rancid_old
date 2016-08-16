@@ -1,0 +1,209 @@
+package gvh;
+##
+## $Id: gvh.pm.in 3236 2016-05-18
+##
+## @PACKAGE@ @VERSION@
+#@copyright@
+#
+#  The expect login scripts were based on Erik Sherk's gwtn, by permission.
+#
+#  The original looking glass software was written by Ed Kern, provided by
+#  permission and modified beyond recognition.
+#
+#  RANCID - Really Awesome New Cisco confIg Differ
+#
+#  gvh.pm - Gigamon VUE rancid procedure 
+
+use 5.010;
+use strict 'vars';
+use warnings;
+no warnings 'uninitialized';
+require(Exporter);
+our @ISA = qw(Exporter);
+
+use rancid @VERSION@;
+
+our $found_hardware;
+our $filter_error;
+our $filter_prompt;
+our $filter_auth;
+
+@ISA = qw(Exporter rancid main);
+#our @EXPORT = qw($VERSION)
+
+# load-time initialization
+sub import {
+    0;
+}
+
+# post-open(collection file) initialization
+sub init {
+    # add content lines and separators
+    ProcessHistory("","","","#RANCID-CONTENT-TYPE: $devtype\n#\n");
+    $found_end = 0;
+    $filter_error = qr/(Line has invalid autocommand|Invalid (input|command) detected|Type help or)/i;
+    $filter_auth = qr/command authorization failed/i;
+    $filter_prompt = qr/[>\$%\]#]/;
+    0;
+}
+
+# main loop of input of device output
+sub inloop {
+    my($INPUT, $OUTPUT) = @_;
+    my($cmd, $rval);
+
+TOP: while (<$INPUT>) {
+        tr/\015//d;
+        if (/$filter_prompt\s*exit$/) {
+            $clean_run = 1;
+            last;
+        }
+        if (/^Error:/) {
+            print STDOUT ("$host gvhlogin error: $_");
+            print STDERR ("$host gvhlogin error: $_") if ($debug);
+            $clean_run=0;
+            last;
+        }
+        while (/$filter_prompt\s*($cmds_regexp)\s*$/) {
+            $cmd = $1;
+            if (!defined($prompt)) {
+                print STDERR "DEBUG: $_" if ($debug);
+                #$prompt = ($_ =~ /^([^>\]]+[>\]])/)[0];
+                $prompt = ($_ =~ /^(.*$filter_prompt)[^\$%\]#>]*/)[0];
+                $prompt =~ s/([][}{)(\\])/\\$1/g;
+                print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
+            }
+            print STDERR ("HIT COMMAND:$_") if ($debug);
+            if (! defined($commands{$cmd})) {
+                print STDERR "$host: found unexpected command - \"$cmd\"\n";
+                $clean_run = 0;
+                last TOP;
+            }
+            if (! defined(&{$commands{$cmd}})) {
+                printf (STDERR "$host: found unexpected function - \"%s\"\n",$commands{$cmd});
+                $clean_run = 0;
+                last TOP;
+            }
+            $rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
+            delete($commands{$cmd});
+            if ($rval == -1) {
+                $clean_run = 0;
+                last TOP;
+            }
+            print (STDERR "clean_run=$clean_run | found_end=$found_end\n") if ($debug);
+        }
+    }
+}
+
+sub ShowVer {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowVer: $_" if ($debug);
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_auth/);
+
+        next if (/^(Uptime|CPU load averages|System memory|Swap):/);
+        ProcessHistory("COMMENT","","","#$_");
+    }
+    ProcessHistory("COMMENT","","","#\n");
+    return(0);
+}
+
+sub ShowChassis {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowChassis: $_" if ($debug);
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_auth/);
+
+        ProcessHistory("COMMENT","","","#$1:\n") if (/^(Chassis|Backplane|Fan Tray \d|Power Module \d):/);
+        ProcessHistory("COMMENT","","","#$_") if (/^\s+(HW Type|Product Code|Serial Num|(HW|SW) Rev)\s*:/);
+    }
+    ProcessHistory("COMMENT","","","#\n");
+    return(0);
+}
+
+sub ShowCard {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowCard: $_" if ($debug);
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_auth/);
+        
+        next if (/Box ID: \d/);
+        ProcessHistory("COMMENT","","","#$_");
+    }
+    ProcessHistory("COMMENT","","","#\n");
+    return(0);
+}
+
+sub ShowLicense {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowLicense: $_" if ($debug);
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_auth/);
+
+        next if (/^(Box \d\s*|---------[^-])/);
+        ProcessHistory("COMMENT","","","#$_");
+    }
+    ProcessHistory("COMMENT","","","#\n");
+    return(0);
+}
+
+sub ShowConfig {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowConfig: $_" if ($debug);
+
+    my $linecnt = 0;
+
+    while (<$INPUT>) {
+        tr/\015//d;
+        last if (/^$prompt/);
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        return(1) if (/$filter_error/);
+        return(-1) if (/$filter_auth/);
+
+        next if(/^## Generated/);
+
+        $linecnt++;
+
+        if (/(username (\S+) password \d) .*/ && $filter_pwds >= 1) {
+            ProcessHistory("USERS","","$2","#$1 <removed>\n");
+            next;
+        }
+        if (/(snmp-server (notify )?community) \S+\s?(ro)?/ && $filter_commstr) {
+            ProcessHistory("CONF","","","#$1 <removed> $3\n");
+            next;
+        }
+        if (/(snmp-server host .* (traps|informs) (version (1|2c|3))) \S+/ && $filter_commstr) {
+            ProcessHistory("CONF","","","#$1 <removed>\n");
+            next;
+        }
+
+        # We keep all other config parameters
+        ProcessHistory("CONF","","","$_");
+    }
+
+    $found_end = 1 if ($linecnt > 5);
+    return(0);
+}
+
+1;
+
