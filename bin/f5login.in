@@ -64,7 +64,7 @@ set bash 0
 
 # Log into the router.
 # returns: 0 on success, 1 on failure, -1 if rsh was used successfully
-proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile } {
+proc login { router user userpswd passwd cmethod cyphertype identfile } {
     global command spawn_id in_proc do_command do_script platform passphrase
     global prompt prompt_match u_prompt p_prompt e_prompt sshcmd
     set in_proc 1
@@ -90,94 +90,19 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
             regexp {ssh(:([^[:space:]]+))*} $prog methcmd suffix port
             set cmd $sshcmd
             if {"$port" != ""} {
-                set cmd "$cmd -p $port"
+                append cmd " -p $port"
             }
             if {"$identfile" != ""} {
-                set cmd "$cmd -i $identfile"
+                append cmd " -i $identfile"
             }
-            set retval [catch {eval spawn [split "$cmd -c $cyphertype -x -l $user $router" { }]} reason]
+            if {"$cyphertype" != ""} {
+                append cmd " -c $cyphertype"
+            }
+            set retval [catch {eval spawn [split "$cmd -x -l $user $router" { }]} reason]
             if { $retval } {
                 send_user "\nError: $cmd failed: $reason\n"
                 return 1
             }
-        } elseif ![string compare $prog "rsh"] {
-            if { ! $do_command } {
-                if { [llength $cmethod] == 1 } {
-                    send_user "\nError: rsh is an invalid method for -x and "
-                    send_user "interactive logins\n"
-                }
-                if { $progs == 0 } {
-                    return 1
-                }
-                continue;
-            }
-
-            # handle escaped ;s in commands, and ;; and ^;
-            regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-            regsub {^;} $esccommand "\u002;" command
-            set sep "\\1\u001"
-            regsub -all {([^\\])\;} $command "$sep" esccommand
-            set sep "\u001"
-            set commands [split $esccommand $sep]
-            set num_commands [llength $commands]
-            set rshfail 0
-            for {set i 0} {$i < $num_commands && !$rshfail} { incr i} {
-                log_user 0
-                set retval [catch {spawn rsh $user@$router [lindex $commands $i] } reason]
-                if { $retval } {
-                    send_user "\nError: rsh failed: $reason\n"
-                    log_user 1; return 1
-                }
-                send_user "$router# [lindex $commands $i]\n"
-
-                # rcmd does not get a pager and no prompts, so we just have to
-                # look for failures & lines.
-                expect {
-                    "Connection refused" { 
-                        catch {close}; catch {wait};
-                        send_user "\nError: Connection Refused ($prog): $router\n"
-                        set rshfail 1
-                    }
-                    -re "(Connection closed by|Connection to \[^\n\r]+ closed)" {
-                        catch {close}; catch {wait};
-                        send_user "\nError: Connection closed ($prog): $router\n"
-                        set rshfail 1
-                    }
-                    "Host is unreachable" { 
-                        catch {close}; catch {wait};
-                        send_user "\nError: Host Unreachable: $router\n"
-                        set rshfail 1
-                    }
-                    "No address associated with" {
-                        catch {close}; catch {wait};
-                        send_user "\nError: Unknown host $router\n"
-                        set rshfail 1
-                    }
-                    -re "\b+" { exp_continue }
-                    -re "\[\n\r]+" { 
-                        send_user -- "$expect_out(buffer)"
-                        exp_continue
-                    }
-                    timeout { 
-                        catch {close}; catch {wait};
-                        send_user "\nError: TIMEOUT reached\n"
-                        set rshfail 1
-                    }
-                    eof { catch {close}; catch {wait}; }
-                }
-                log_user 1
-            }
-            if { $rshfail } {
-                if { !$progs } {
-                    return 1
-                } else {
-                    continue
-                }
-            }
-            # fake the end of the session for rancid.
-            send_user "$router# exit\n"
-            # return rsh "success"
-            return -1
         } else {
             send_user "\nError: unknown connection method: $prog\n"
             return 1
@@ -505,7 +430,6 @@ foreach router [lrange $argv $i end] {
             continue
         }
         set passwd [join [lindex $pswd 0] ""]
-        set enapasswd [join [lindex $pswd 1] ""]
     } else {
         set passwd $userpasswd
     }
@@ -565,7 +489,7 @@ foreach router [lrange $argv $i end] {
         set cyphertype $cypher
     } else {
         set cyphertype [find cyphertype $router]
-        if { "$cyphertype" == "" } { set cyphertype "3des" }
+        #if { "$cyphertype" == "" } { set cyphertype "3des" }
     }
 
     # Figure out connection method
@@ -577,7 +501,7 @@ foreach router [lrange $argv $i end] {
     if { "$sshcmd" == "" } { set sshcmd {ssh} }
 
     # Login to the router
-    if {[login $router $ruser $userpswd $passwd $enapasswd $cmethod $cyphertype $identfile]} {
+    if {[login $router $ruser $userpswd $passwd $cmethod $cyphertype $identfile]} {
         incr exitval
         # if login failed or rsh was unsuccessful, move on to the next device
         continue

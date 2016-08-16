@@ -65,12 +65,15 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 			regexp {ssh(:([^[:space:]]+))*} $prog methcmd suffix port
 			set cmd $sshcmd
 			if {"$port" != ""} {
-				set cmd "$cmd -p $port"
+                append cmd " -p $port"
 			}
 			if {"$identfile" != ""} {
-				set cmd "$cmd -i $identfile"
+                append cmd " -i $identfile"
 			}
-			set retval [catch {eval spawn [split "$cmd -c $cyphertype -x -l $user $router" { }]} reason]
+            if {"$cyphertype" != ""} {
+                append cmd " -c $cyphertype"
+            }
+            set retval [catch {eval spawn [split "$cmd -x -l $user $router" { }]} reason]
 			if { $retval } {
 				send_user "\nError: $cmd failed: $reason\n"
 				return 1
@@ -396,7 +399,7 @@ proc run_commands { prompt command } {
 	if { [string compare "extreme" "$platform"] } {
 		# match cisco config mode prompts too, such as router(config-if)#,
 		# but catalyst does not change in this fashion.
-		regsub -lineanchor -- {^(.{1,11}).*([#>])$} $prompt {\1} reprompt
+		regsub -lineanchor -- {^(\S*).*([#>])$} $prompt {\1} reprompt
 		regsub -all -- {[\\]$} $reprompt {} reprompt
 		append reprompt {([^#>\r\n]+)?[#>](\\([^)\\r\\n]+\\))?}
 	} else {
@@ -425,85 +428,86 @@ proc run_commands { prompt command } {
 		} else {
 			set l_cmd [subst -nocommands [lindex $commands $i]]
 			send -- "$l_cmd\r"
-			if { [string match {"^hostname"} $l_cmd] } { 
+			if { [regexp {^(hostname|changeto)} $l_cmd] } { 
 				set prompt [ get_prompt "(>|#| \\(enable\\))"]
 				if { [string compare "extreme" "$platform"] } {
 					# match cisco config mode prompts too, such as router(config-if)#,
 					# but catalyst does not change in this fashion.
-					regsub -lineanchor -- {^(.{1,11}).*([#>])$} $prompt {\1} reprompt
+					regsub -lineanchor -- {^(\S*).*([#>])$} $prompt {\1} reprompt
 					regsub -all -- {[\\]$} $reprompt {} reprompt
 					append reprompt {([^#>\r\n]+)?[#>](\\([^)\\r\\n]+\\))?}
 				} else {
 					set reprompt $prompt
 				}
-			}
-		}
-		expect {
-			-re "^Enter TEXT message\.  End with the character '(.)'\.?\[\n\r]+" {
-				set endchar $expect_out(1,string)
-				send_user -- "$expect_out(buffer)"
-				for {set j [ expr $i + 1 ]} {$j < $num_commands} {incr j} {
-					send -- "[subst -nocommands [lindex $commands $j]]\r"
-					expect {
-						-re "^\[^\n\r *]*$reprompt" { send_user -- "$expect_out(buffer)"; break }
-						-re "^.*\r\n" { send_user -- "$expect_out(buffer)" }
+			} else {
+		        expect {
+		    	    -re "^Enter TEXT message\.  End with the character '(.)'\.?\[\n\r]+" {
+					set endchar $expect_out(1,string)
+		    			send_user -- "$expect_out(buffer)"
+			    		for {set j [ expr $i + 1 ]} {$j < $num_commands} {incr j} {
+			    		send -- "[subst -nocommands [lindex $commands $j]]\r"
+		    				expect {
+			    				-re "^\[^\n\r *]*$reprompt" { send_user -- "$expect_out(buffer)"; break }
+				    			-re "^.*\r\n" { send_user -- "$expect_out(buffer)" }
+					    	}
 					}
-				}
-				set i [ expr $j ]
-			}
-			-re "^Clear \"show interface\" counters on all interfaces \\\[confirm\\\]" {
-				send_user -- "$expect_out(buffer)"
-				send "y"
-				exp_continue
-			}
-			-re "\b+" { exp_continue }
-			-re "^\[^\n\r *]*$reprompt" {
-				set timeout $timeoutdflt
-				send_user -- "$expect_out(buffer)"
-			}
-			-re "^\[^\n\r]*$reprompt."		{
-				send_user -- "$expect_out(buffer)"
-				exp_continue
-			}
-			-re {(Destination|Source) filename \[[^\r\n]+\]\?} { # specific match for copy running startup
-				send_user -- "$expect_out(buffer)" 
-				send "\r"
-				exp_continue
-			}
-			-re {^Do you wish to (continue|cleanup database|cleanup user local disk)\? \(\[NO\]/yes\)} { # specific match for ncs cleanup command
-				# NCS cleanup or backup are "very" long command without any return at screen... 
-				# We change the time out to extend it to 2 hours
-				set timeout 7200 
-				send_user -- "$expect_out(buffer)"
-				send "yes\r"
-				exp_continue
-			}
-			-re "^--More--\[\r\n]+" { 
-				# specific match c1900 pager
-				send " "
-				exp_continue
-			}
-			-re "\[^\r\n]*\[\n\r]+" { 
-				send_user -- "$expect_out(buffer)"
-				exp_continue
-			}
-			-re "\[^\r\n]*Press <SPACE> to cont\[^\r\n]*" {
-				send " "
-				# bloody ^[[2K after " "
-				expect -re "^\[^\r\n]*\r" {}
-				exp_continue
-			}
-			-re "^ *--More--\[^\n\r]*" {
-				send " "
-				exp_continue 
-			}
-			-re "^<-+ More -+>\[^\n\r]*" {
-				send_user -- "$expect_out(buffer)"
-				send " "
-				exp_continue 
-			}
-		}
-	}
+		    			set i [ expr $j ]
+			    	}
+				    -re "^Clear \"show interface\" counters on all interfaces \\\[confirm\\\]" {
+					send_user -- "$expect_out(buffer)"
+		    			send "y"
+			    		exp_continue
+				    }
+				    -re "\b+" { exp_continue }
+		    		-re "^\[^\n\r *]*$reprompt" {
+			    		set timeout $timeoutdflt
+				    	send_user -- "$expect_out(buffer)"
+    				}
+		    		-re "^\[^\n\r]*$reprompt."		{
+			    		send_user -- "$expect_out(buffer)"
+				    	exp_continue
+	    			}
+		    		-re {(Destination|Source) filename \[[^\r\n]+\]\?} { # specific match for copy running startup
+			    		send_user -- "$expect_out(buffer)" 
+				    	send "\r"
+					    exp_continue
+		    		}
+		    		-re {^Do you wish to (continue|cleanup database|cleanup user local disk)\? \(\[NO\]/yes\)} { # specific match for ncs cleanup command
+			    		# NCS cleanup or backup are "very" long command without any return at screen... 
+				    	# We change the time out to extend it to 2 hours
+					    set timeout 7200 
+					send_user -- "$expect_out(buffer)"
+		    			send "yes\r"
+			    		exp_continue
+				    }
+			    	-re "^--More--\[\r\n]+" { 
+		    			# specific match c1900 pager
+			    		send " "
+				    	exp_continue
+				    }
+		    		-re "\[^\r\n]*\[\n\r]+" { 
+			    		send_user -- "$expect_out(buffer)"
+				    	exp_continue
+		    		}
+		    		-re "\[^\r\n]*Press <SPACE> to cont\[^\r\n]*" {
+			    		send " "
+				    	# bloody ^[[2K after " "
+					    expect -re "^\[^\r\n]*\r" {}
+					exp_continue
+		    		}
+			    	-re "^ *--More--\[^\n\r]*" {
+				    	send " "
+					    exp_continue 
+		    		}
+		    		-re "^<-+ More -+>\[^\n\r]*" {
+			    		send_user -- "$expect_out(buffer)"
+				    	send " "
+					    exp_continue 
+			    	}
+		        }
+	        }
+        }
+	}   
 	log_user 1
 
 	if { [string compare "extreme" "$platform"] } {
@@ -688,7 +692,7 @@ foreach router [lrange $argv $i end] {
 		set cyphertype $cypher
 	} else {
 		set cyphertype [find cyphertype $router]
-		if { "$cyphertype" == "" } { set cyphertype "3des" }
+		#if { "$cyphertype" == "" } { set cyphertype "3des" }
 	}
 
 	# Figure out connection method
