@@ -135,8 +135,8 @@ git)
 esac
 
 # Log dir
-if [ ! -d logs ]; then
-    mkdir logs
+if [ ! -d "$LOGDIR" ]; then
+    mkdir "$LOGDIR"
 fi
 
 # Which groups to do
