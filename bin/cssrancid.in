@@ -590,6 +590,7 @@ sub RunCommand {
         {'copy running-config startup-config'                 => 'RunCommand'},
 	{'copy profile user-profile'	=> 'CopyProfile'},
 	{'show version'			=> 'ShowVersion'},
+    {'show chassis'         => 'ShowVersion'}, 
 	{'show boot'			=> 'ShowBoot'},
 	{'show run'			=> 'ShowRun'}
 );
