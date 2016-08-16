@@ -1,1 +1,12 @@
 patch/*
+bin/*login
+bin/*rancid
+bin/login_top
+bin/rtftpcopy
+bin/.deps
+Makefile
+*/Makefile
+config.*
+share/rtrfilter
+share/downreport
+share/rancid-cvspurge
