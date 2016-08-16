@@ -25,13 +25,13 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the <libutil.h> header file. */
-#define HAVE_LIBUTIL_H 1
+/* #undef HAVE_LIBUTIL_H */
 
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
 
 /* Define to 1 if you have the <malloc.h> header file. */
-/* #undef HAVE_MALLOC_H */
+#define HAVE_MALLOC_H 1
 
 /* Define to 1 if you have the `memcpy' function. */
 #define HAVE_MEMCPY 1
@@ -58,7 +58,7 @@
 /* #undef HAVE_PTSNAME */
 
 /* Define to 1 if you have the <pty.h> header file. */
-/* #undef HAVE_PTY_H */
+#define HAVE_PTY_H 1
 
 /* Define to 1 if you have the `rindex' function. */
 #define HAVE_RINDEX 1
@@ -127,7 +127,7 @@
 /* #undef HAVE_UTIL_H */
 
 /* Define to 1 if you have the <wait.h> header file. */
-/* #undef HAVE_WAIT_H */
+#define HAVE_WAIT_H 1
 
 /* Name of package */
 #define PACKAGE "rancid"
@@ -139,7 +139,7 @@
 #define PACKAGE_NAME "rancid"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "rancid 3.4.0"
+#define PACKAGE_STRING "rancid 3.4.1"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "rancid"
@@ -148,7 +148,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "3.4.0"
+#define PACKAGE_VERSION "3.4.1"
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
@@ -157,7 +157,7 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "3.4.0"
+#define VERSION "3.4.1"
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
