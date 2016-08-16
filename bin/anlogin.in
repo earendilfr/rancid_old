@@ -305,13 +305,13 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 	    regexp {ssh(:([^[:space:]]+))*} $prog methcmd suffix port
 	    set cmd $sshcmd
 	    if {"$port" != ""} {
-		set cmd "$cmd -p $port"
+		    append cmd " -p $port"
 	    }
 	    if {"$identfile" != ""} {
-		set cmd "$cmd -i $identfile"
+		    append cmd " -i $identfile"
 	    }
 	    if {"$cyphertype" != ""} {
-		set cmd "$cmd -c $cyphertype"
+		    append cmd " -c $cyphertype"
 	    }
 	    set retval [catch {eval spawn [split "$cmd -x -l $user $router" { }]} reason]
 	    if { $retval } {

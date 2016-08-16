@@ -310,15 +310,18 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 	    regexp {ssh(:([^[:space:]]+))*} $prog methcmd suffix port
 	    set cmd $sshcmd
 	    if {"$port" != ""} {
-		set cmd "$cmd -p $port"
+		    append cmd " -p $port"
 	    }
 	    if {"$identfile" != ""} {
-		set cmd "$cmd -i $identfile"
+		    append cmd " -i $identfile"
 	    }
+        if {"$cyphertype" != ""} {
+            append cmd " -c $cyphertype"
+        }
 	    if { $do_command || $do_script } {
-		set retval [ catch {eval spawn hpuifilter -- [split "$cmd -c $cyphertype -x -l $user $router" { }]} reason ]
+		set retval [ catch {eval spawn hpuifilter -- [split "$cmd -x -l $user $router" { }]} reason ]
 	    } else {
-		set retval [ catch {eval spawn [split "$cmd -c $cyphertype -x -l $user $router" { }]} reason ]
+		set retval [ catch {eval spawn [split "$cmd -x -l $user $router" { }]} reason ]
 	    }
 	    if { $retval } {
 		send_user "\nError: $cmd failed: $reason\n"
@@ -725,7 +728,7 @@ foreach router [lrange $argv $i end] {
       set cyphertype $cypher
     } else {
       set cyphertype [find cyphertype $router]
-      if { "$cyphertype" == "" } { set cyphertype "3des" }
+      #if { "$cyphertype" == "" } { set cyphertype "3des" }
     }
 
     # Figure out connection method
