@@ -93,43 +93,42 @@ sub inloop {
     my($cmd, $rval);
 
 TOP: while(<$INPUT>) {
-	tr/\015//d;
-	if (/[>#]\s?exit$/) {
-	    $clean_run = 1;
-	    last;
-	}
-	if (/^Error:/) {
-	    print STDOUT ("$host clogin error: $_");
-	    print STDERR ("$host clogin error: $_") if ($debug);
-	    $clean_run = 0;
-	    last;
-	}
-	while (/[>#]\s*($cmds_regexp)\s*$/) {
-	    $cmd = $1;
-	    if (!defined($prompt)) {
-		$prompt = ($_ =~ /^([^#>]+[#>])/)[0];
-		$prompt =~ s/([][}{)(+\\])/\\$1/g;
-		print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
+	    tr/\015//d;
+	    if (/[>#]\s?exit$/) {
+	        $clean_run = 1;
+	        last;
 	    }
-	    print STDERR ("HIT COMMAND:$_") if ($debug);
-	    if (! defined($commands{$cmd})) {
-		print STDERR "$host: found unexpected command - \"$cmd\"\n";
-		$clean_run = 0;
-		last TOP;
+	    if (/^Error:/) {
+	        print STDOUT ("$host clogin error: $_");
+	        print STDERR ("$host clogin error: $_") if ($debug);
+	        $clean_run = 0;
+	        last;
 	    }
-	    if (! defined(&{$commands{$cmd}})) {
-		printf(STDERR "$host: undefined function - \"%s\"\n",
-		       $commands{$cmd});
-		$clean_run = 0;
-		last TOP;
+	    while (/[>#]\s*($cmds_regexp)\s*$/) {
+	        $cmd = $1;
+	        if (!defined($prompt)) {
+		        $prompt = ($_ =~ /^([^#>]+[#>])/)[0];
+		        $prompt =~ s/([][}{)(+\\])/\\$1/g;
+		        print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
+	        }
+	        print STDERR ("HIT COMMAND:$_") if ($debug);
+	        if (! defined($commands{$cmd})) {
+		        print STDERR "$host: found unexpected command - \"$cmd\"\n";
+		        $clean_run = 0;
+		        last TOP;
+	        }
+	        if (! defined(&{$commands{$cmd}})) {
+		        printf(STDERR "$host: undefined function - \"%s\"\n",$commands{$cmd});
+		        $clean_run = 0;
+		        last TOP;
+	        }
+	        $rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
+	        delete($commands{$cmd});
+	        if ($rval == -1) {
+		        $clean_run = 0;
+		        last TOP;
+	        }
 	    }
-	    $rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
-	    delete($commands{$cmd});
-	    if ($rval == -1) {
-		$clean_run = 0;
-		last TOP;
-	    }
-	}
     }
 }
 
@@ -272,17 +271,23 @@ sub ShowVersion {
 	next if (/^Motherboard/i && ($type eq "3750" || $type eq "3650"));
 	next if (/^Power supply/i && ($type eq "3750" || $type eq "3650"));
 	/^Model number\s+: (.*)$/i && ($type eq "3750" || $type eq "3650") &&
-	    ProcessHistory("COMMENTS","keysort","C2", "!Model number:  $1\n") &&
+	    ProcessHistory("COMMENTS","keysort","C1", "!Model number:  $1\n") &&
  	    next;
 	/^System serial number\s+: (.*)$/i && ($type eq "3750" || $type eq "3650") &&
-	    ProcessHistory("COMMENTS","keysort","C2", "!Serial number: $1\n") &&
+	    ProcessHistory("COMMENTS","keysort","C1", "!Serial number: $1\n") &&
  	    next;
+    /^Base ethernet MAC Address\s+: (.*)$/i && ($type eq "3750" || $type eq "3650") &&
+        ProcessHistory("COMMENTS","keysort","C1", "!--------------\n") &&
+        ProcessHistory("COMMENTS","keysort","C1", "!MAC address: $1\n") &&
+        next;
 	# CatOS 3500xl stuff
 	/^system serial number\s*:\s+(.*)$/i &&
 	    ProcessHistory("COMMENTS","keysort","C1", "!Serial Number: $1\n") &&
 	    next;
 	/^Model / &&
 	    ProcessHistory("COMMENTS","keysort","C2", "!$_") && next;
+    /^Base ethernet MAC Address\s+:\s+(.*)$/i &&
+        ProcessHistory("COMMENTS","keysort","C1", "!MAC address: $1\n") && next;
 	/^Motherboard / &&
 	    ProcessHistory("COMMENTS","keysort","C3", "!$_") && next;
 	/^Power supply / &&

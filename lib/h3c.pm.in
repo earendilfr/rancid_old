@@ -82,7 +82,6 @@ TOP: while (<$INPUT>) {
                 $clean_run = 0;
                 last TOP;
             }
-            print (STDERR "clean_run=$clean_run | found_end=$found_end\n") if ($debug);
         }
     }
 }

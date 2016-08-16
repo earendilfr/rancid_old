@@ -274,7 +274,6 @@ sub ShowCdp {
         return(1) if (/Line has invalid autocommand /);
         return(1) if (/(invalid (input|command) detected|type help or )/i);
         return(-1) if (/command authorization failed/i);
-        print STDERR "!DEBUG: $device_id,$device_ip,$type,$local_int,$rem_int\n";
         if (/----------------------------------------/ && length($device_id) && length($local_int)) {
             ProcessHistory("CDP","keysort","$device_id",sprintf("! CDP Neighbor: %s [%s]:Type=%s / Local interface=%s / Remote interface=%s\n",$device_id,$device_ip,$type,$local_int,$rem_int));
             ($device_id,$device_ip,$type,$local_int,$rem_int) = ('','','','','');
