@@ -19,9 +19,9 @@ our @ISA = qw(Exporter);
 use rancid @VERSION@;
 
 our $found_hardware;
-our $found_version;
 our $found_license;
 our $filter_error;
+our $filter_prompt;
 
 @ISA = qw(Exporter rancid main);
 #our @EXPORT = qw($VERSION)
@@ -36,9 +36,10 @@ sub init {
 	# add content lines and separators
 	ProcessHistory("","","","#RANCID-CONTENT-TYPE: $devtype\n#\n");
 	$found_hardware = 0;
-	$found_version = 0;
 	$found_license = 0;
+	$found_end = 0;
 	$filter_error = qr/(command not found|Invalid command)/i;
+	$filter_prompt = qr/[>\$%\]#]/;
 	0;
 }
 
@@ -49,7 +50,7 @@ sub inloop {
 
 TOP: while (<$INPUT>) {
 		tr/\015//d;
-		if (/#\s?exit$/) {
+		if (/$filter_prompt\s*(exit|logout)$/) {
 			$clean_run = 1;
 			last;
 		}
@@ -59,16 +60,22 @@ TOP: while (<$INPUT>) {
 			$clean_run=0;
 			last;
 		}
-		while (/#\s*($cmds_regexp)\s*$/) {
+		while (/$filter_prompt\s*($cmds_regexp)\s*$/) {
 			$cmd = $1;
 			if (!defined($prompt)) {
-				$prompt = ($_ =~ /^([^#]+#)/)[0];
+				#$prompt = ($_ =~ /^([^>\]]+[>\]])/)[0];
+				$prompt = ($_ =~ /^(.*$filter_prompt)[^\$%\]#]*/)[0];
 				$prompt =~ s/([][}{)(\\])/\\$1/g;
 				print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
 			}
 			print STDERR ("HIT COMMAND:$_") if ($debug);
 			if (! defined($commands{$cmd})) {
 				print STDERR "$host: found unexpected command - \"$cmd\"\n";
+				$clean_run = 0;
+				last TOP;
+			}
+			if (! defined(&{$commands{$cmd}})) {
+				printf (STDERR "$host: found unexpected function - \"%s\"\n",$commands{$cmd});
 				$clean_run = 0;
 				last TOP;
 			}
@@ -86,32 +93,70 @@ TOP: while (<$INPUT>) {
 # This routine parses "dmidecode" and "system_info" command
 sub SystemInfo {
 	my($INPUT, $OUTPUT, $cmd) = @_;
-	print STDERR "    In Dmidecode: $_" if ($debug);
+	print STDERR "    In SystemInfo: $_" if ($debug);
 	
+	my ($chassis,$motherboard,$slot) = ({},{},[]);
+
 	while (<$INPUT>) {
 		tr/\015//d;
+INF:
 		last if (/^$prompt/);
 		next if (/^(\s*|\s*$cmd\s*)$/);
 		
 		return(0) if ($found_hardware);
 		return(1) if (/$filter_error/);
 
-		if (/(System Information|Motherboard Information|Slot \d, Card Information)/) {
-			ProcessHistory("COMMENTS","","","!$1:\n");
-			while (<$INPUT>) {
-				tr/\015//d;
-				last if (/^(Handle 0x|\s*$)/);
-				ProcessHistory("COMMENTS","","","!  Manufacturer: $1\n") if (/^\s*Manufacturer:\s*(.*)/);
-				ProcessHistory("COMMENTS","","","!  Product: $1\n") if (/^\s*Product Name:\s*(.*)/);
-				ProcessHistory("COMMENTS","","","!  Serial Number: $1\n") if (/^\s*Serial Number:\s*(.*)/);
-				ProcessHistory("COMMENTS","","","!  Assembly Part Number: $1\n") if (/^\s*Assembly Part Number:\s*(.*)/);
-				ProcessHistory("COMMENTS","","","!  HW Revision: $1\n") if (/^\s*HW Revision:\s*(.*)/);
+		if ($cmd =~ /show asset (all|system)/) {
+			if (/^Platform:\s*([[:print:]]+)/ && length($1)) { $chassis->{plateform} = $1; }
+			elsif (/^Model:\s*([[:print:]]+)/ && length($1)) { $chassis->{model} = $1; }
+			elsif (/^Chassis (.*):\s*([[:print:]]+)/ && length($2)) {  $chassis->{$1} = $2; }
+			elsif (/^Motherboard (.*):\s*([[:print:]]+)/ && length($2)) { $motherboard->{$1} = $2; }
+			elsif (/^Line Card #(\d) (.*):\s*([[:print:]]+)/ && length($3)) { $$slot[$1]->{$2} = $3; }
+		} elsif ($cmd =~ /(system_info|dmidecode)/) {
+			if (/System Information/) {
+				while (<$INPUT>) {
+					tr/\015//d;
+					goto INF if (/^$prompt/);
+					last if (/^(Handle 0x|\s*$)/);
+					if (/^\s*Product Name:\s*([[:print:]]+)/ && length($1)) { $chassis->{plateform} = $1; }
+					elsif (/^\s*(.*):\s*([[:print:]]+)/ && length($2)) { $chassis->{$1} = $2; }
+				}
+			} elsif (/Motherboard Information/) {
+				while (<$INPUT>) {
+					tr/\015//d;
+					goto INF if (/^$prompt/);
+					last if (/^(Handle 0x|\s*$)/);
+					if (/^\s*(.*):\s*([[:print:]]+)/ && length($2)) { $motherboard->{$1} = $2; }
+				}
+			} elsif (/Slot (\d), Card Information/) {
+				my $index = $1;
+				while (<$INPUT>) {
+					tr/\015//d;
+					goto INF if (/^$prompt/);
+					last if (/^(Handle 0x|\s*$)/);
+					if (/^\s*(.*):\s*([[:print:]]+)/ && length($2)) { $$slot[$index]->{$1} = $2; }
+				}
 			}
 		}
 	}
 
-	$found_hardware = 1;
-	ProcessHistory("COMMENTS","","","!\n");
+	if (exists($chassis->{'Serial Number'})) {
+		ProcessHistory("COMMENTS","","","#System:\n");
+		foreach my $key (keys %$chassis) { ProcessHistory("COMMENTS","","","#  $key: $chassis->{$key}\n"); }
+		$found_hardware = 1;
+		if (exists($motherboard->{'Serial Number'})) {
+			ProcessHistory("COMMENTS","","","#Motherboard:\n");
+			foreach my $key (keys %$motherboard) { ProcessHistory("COMMENTS","","","#  $key: $motherboard->{$key}\n"); }
+		}
+		for my $index (0 .. length(@$slot)) {
+			if (exists($$slot[$index]->{'Serial Number'})) {
+				ProcessHistory("COMMENTS","","","#Line Card $index:\n");
+				foreach my $key (keys %{$$slot[$index]}) { ProcessHistory("COMMENTS","","","#  $key: $$slot[$index]->{$key}\n"); }
+			}
+		}
+	}
+
+	ProcessHistory("COMMENTS","","","#\n");
 	return(0);
 }
 
@@ -126,13 +171,13 @@ sub SystemInfo61K {
 
 		return(1) if (/$filter_error/);
 		
-		ProcessHistory("COMMENTS","","","! $_") if (/^chassis \d [A-Z0-9]* serial: .*/);
+		ProcessHistory("COMMENTS","","","# $_") if (/^chassis \d [A-Z0-9]* serial: .*/);
 		if (/^(\d)_(\d{2}):/) {
 			my $SGM = "chassis $1 SGM$2";
-			ProcessHistory("COMMENTS","","","! $SGM serial: $1\n") if (<$INPUT> =~ /Board Serial\s*: (.*)/);
+			ProcessHistory("COMMENTS","","","# $SGM serial: $1\n") if (<$INPUT> =~ /Board Serial\s*:\s*([^\r\n]*)/);
 		}
 	}
-	ProcessHistory("COMMENTS","","","!\n");
+	ProcessHistory("COMMENTS","","","#\n");
 	return(0);
 }
 
@@ -146,14 +191,14 @@ sub ShowVer {
         last if (/^$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
 
-        return(0) if ($found_version);
 		return(1) if (/$filter_error/);
 
-		ProcessHistory("VERSION","","","!$_");
+		ProcessHistory("VERSION","","","#$_");
+		# We are not able to export conf for splat firewall
+		if (/Check Point SecurePlatform Pro/) { $found_end = 1 };
 	}
 	
-	$found_version = 1;
-	ProcessHistory("VERSION","","","!\n");
+	ProcessHistory("VERSION","","","#\n");
 	return(0);
 }
 
@@ -162,6 +207,7 @@ sub ShowLic {
 	my($INPUT, $OUTPUT, $cmd) = @_;
 	print STDERR "    In ShowLic: $_" if ($debug);
 
+	ProcessHistory("LICENSE","","","#Licenses:\n");
 	while (<$INPUT>) {
 		tr/\015//d;
         last if (/^$prompt/);
@@ -171,17 +217,17 @@ sub ShowLic {
 		return(0) if ($found_license);
 
 		if (/([0-9A-F:\.]*|[a-zA-Z0-9]*)\s*(never|\d{1,2}(Jan|Fev|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\d{4})\s*([0-9A-Za-z]*)\s*([A-Za-z0-9 -]*)/) {
-			ProcessHistory("LICENSE","","","! Host: $1 | Expiration: $2 | Signature: $4 | Feature: $5\n");
+			ProcessHistory("LICENSE","","","# Host: $1 | Expiration: $2 | Signature: $4 | Feature: $5\n");
 			next;
 		}
 		if (/([0-9A-F:\.]*|[a-zA-Z0-9]*)\s*(never|\d{1,2}(Jan|Fev|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\d{4})\s*([A-Za-z0-9 -]*)/) {
-			ProcessHistory("LICENSE","","","! Host: $1 | Expiration: $2 | Feature: $4\n");
+			ProcessHistory("LICENSE","","","# Host: $1 | Expiration: $2 | Feature: $4\n");
 			next;
 		}
 	}
 
 	$found_license = 1;
-	ProcessHistory("LICENSE","","","!\n");
+	ProcessHistory("LICENSE","","","#\n");
 	return(0);
 }
 
@@ -189,6 +235,8 @@ sub ShowLic {
 sub ShowConfig {
 	my($INPUT, $OUTPUT, $cmd) = @_;
 	print STDERR "    In ShowConfig: $_" if ($debug);
+
+	my $linecnt = 0;
 
 	while (<$INPUT>) {
 		tr/\015//d;
@@ -198,25 +246,37 @@ sub ShowConfig {
 		return(1) if (/$filter_error/);
 		return(0) if ($found_end);
 
+		# We don't keep lock warning message
+		next if (/Config lock is owned by .*/);
+
+		# We remove the date of this export conf
+		next if (/^#\s*Exported by .*/);
+
+		# To be sure what we have found the end
+		$linecnt++;
+
+		# We take in count line with a password
 		if (/(set expert-password-hash)\s*.*/ && $filter_pwds >= 1) {
-			ProcessHistory("CONF","","","!$1 <removed>\n");
+			ProcessHistory("CONF","","","#$1 <removed>\n");
 			next;
 		}
 		if (/(set user .* password-hash)\s*.*/ && $filter_pwds >= 1) {
-			ProcessHistory("CONF","","","!$1 <removed>\n");
+			ProcessHistory("CONF","","","#$1 <removed>\n");
 			next;
 		}
 		if (/(add aaa tacacs-servers priority \d server [0-9A-F:\.]* key) \S* (timeout \d)/ && $filter_pwds >= 1) {
-			ProcessHistory("CONF","","","!$1 <removed> $2\n");
+			ProcessHistory("CONF","","","#$1 <removed> $2\n");
 			next;
 		}
 		if (/(add snmp usm user .* security-level authNoPriv auth-pass-phrase-hashed) .*/ && $filter_pwds >= 1) {
-			ProcessHistory("CONF","","","!$1 <removed>\n");
+			ProcessHistory("CONF","","","#$1 <removed>\n");
 			next;
 		}
+
+		# We keep all other config parameters
 		ProcessHistory("CONF","","","$_");
 	}
-	$found_end = 1;
+	$found_end = 1 if ($linecnt > 5);
 	return(0);
 }
 

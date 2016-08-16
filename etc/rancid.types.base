@@ -73,6 +73,21 @@ ciena-ws;command;wavesvros::WriteTerm;configuration show
 cat5;script;cat5rancid
 cat5;login;clogin
 #
+## Checkpoint firewall (61K, Gaia and SPLAT)
+checkpoint;script;rancid -t checkpoint
+checkpoint;login;llogin
+checkpoint;module;checkpoint
+checkpoint;inloop;checkpoint::inloop
+checkpoint;command;checkpoint::ShowVer;fw ver
+checkpoint;command;checkpoint::ShowVer;ver
+checkpoint;command;checkpoint::SystemInfo61K;asg_serial_info
+checkpoint;command;checkpoint::SystemInfo61K;asg_sgm_serial
+checkpoint;command;checkpoint::SystemInfo;system_info System Information
+checkpoint;command;checkpoint::SystemInfo;dmidecode
+checkpoint;command;checkpoint::ShowLic;cplic print
+#checkpoint;command;checkpoint::ShowConfig;asg_config show
+#checkpoint;command;checkpoint::ShowConfig;clish -c 'show configuration'
+#
 # Cisco IOS device & Allied Telesis AW+
 cisco;script;rancid -t cisco
 cisco;login;clogin
