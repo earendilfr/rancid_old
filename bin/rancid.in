@@ -53,8 +53,8 @@ use warnings;
 no warnings 'uninitialized';
 use Exporter;
 use Getopt::Std;
-our($opt_d, $opt_f, $opt_h, $opt_l, $opt_t, $opt_C, $opt_V);
-getopts('dfhlt:CV');
+our($opt_d, $opt_f, $opt_h, $opt_l, $opt_t, $opt_C, $opt_V,$opt_o,$opt_c);
+getopts('dfhlt:CVc:o:');
 BEGIN {
     push(@INC, "@pkglibdir@");
 }
@@ -63,7 +63,7 @@ our @ISA = qw(Exporter rancid);
 
 sub usage()
 {
-    print STDERR "rancid [-dhltCV] -t device_type [-f filename | hostname]\n";
+    print STDERR "rancid [-dhltCV] [-c command] [-o output] -t device_type [-f filename | hostname]\n";
     exit 64;
 }
 
@@ -82,8 +82,27 @@ if (! defined($lscript)) {
     die "login script not defined for device type $rancid::devtype\n";
 }
 
+# If we only want one command
+if (length($opt_c)) {
+    my ($func,$cmd) = split(';',$opt_c);
+    if (length($func) && length($cmd)) {
+        @commandtable = ({$cmd,$func});
+        @commands = map(keys(%$_), @commandtable);
+        %commands = map(%$_, @commandtable);
+        $commandcnt = scalar(keys(%commands));
+        $commandstr = join(";",@commands);
+        $cmds_regexp = join("|", map quotemeta($_), @commands);
+    }
+}
+
 # open the temporary file for the digested output
-open(OUTPUT,">$host.new") || die "Can't open $host.new for writing: $!\n";
+my $outstream;
+if (length($opt_o)) {
+    $outstream=$opt_o
+} else {
+    $outstream="$host.new"
+}
+open(OUTPUT,">$outstream") || die "Can't open $outstream for writing: $!\n";
 select(OUTPUT);
 if (length($#modules)) {
     my($module);
@@ -139,7 +158,7 @@ if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
 }
 
 # check for completeness
-if (scalar(%commands) || !$clean_run || !$found_end) {
+if (!length($opt_c) && (scalar(%commands) || !$clean_run || !$found_end)) {
     if (scalar(keys %commands) eq $commandcnt) {
 	printf(STDERR "$host: missed cmd(s): all commands\n");
     } elsif (scalar(%commands)) {
