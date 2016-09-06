@@ -123,12 +123,10 @@ sub ShowConfig {
 
 	$linecnt++;
 	if (! /^$prompt/) {
-	    print(STDERR "      ShowConfig Data: $_") if ($debug);
 	    ProcessHistory("","","","$_");
 	}
     }
     ProcessHistory("","","","\n!--WLC End Config Data--!\n");
-    print STDERR "    Exiting ShowConfig: $_" if ($debug);
     # WLC lacks a definitive "end of config" marker.
     if ($linecnt > 5) {
 	$found_end = 1;

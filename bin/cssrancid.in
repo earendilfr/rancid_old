@@ -587,7 +587,7 @@ sub RunCommand {
 # Main
 @commandtable = (
 	{'term length 65535'		=> 'TermLength'},
-        {'copy running-config startup-config'                 => 'RunCommand'},
+    #{'copy running-config startup-config'                 => 'RunCommand'},
 	{'copy profile user-profile'	=> 'CopyProfile'},
 	{'show version'			=> 'ShowVersion'},
     {'show chassis'         => 'ShowVersion'}, 

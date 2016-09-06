@@ -73,7 +73,7 @@ ciena-ws;command;wavesvros::WriteTerm;configuration show
 cat5;script;cat5rancid
 cat5;login;clogin
 #
-## Checkpoint firewall (61K, Gaia and SPLAT)
+# Checkpoint firewall (61K, Gaia and SPLAT)
 checkpoint;script;rancid -t checkpoint
 checkpoint;login;llogin
 checkpoint;module;checkpoint
@@ -82,11 +82,13 @@ checkpoint;command;checkpoint::ShowVer;fw ver
 checkpoint;command;checkpoint::ShowVer;ver
 checkpoint;command;checkpoint::SystemInfo61K;asg_serial_info
 checkpoint;command;checkpoint::SystemInfo61K;asg_sgm_serial
+checkpoint;command;checkpoint::SystemInfo;clish -c 'show asset all'
 checkpoint;command;checkpoint::SystemInfo;system_info System Information
 checkpoint;command;checkpoint::SystemInfo;dmidecode
 checkpoint;command;checkpoint::ShowLic;cplic print
-#checkpoint;command;checkpoint::ShowConfig;asg_config show
-#checkpoint;command;checkpoint::ShowConfig;clish -c 'show configuration'
+checkpoint;command;checkpoint::ShowConfig;asg_config show
+checkpoint;command;checkpoint::ShowConfig;show configuration
+checkpoint;command;checkpoint::ShowConfig;clish -c 'show configuration'
 #
 # Cisco IOS device & Allied Telesis AW+
 cisco;script;rancid -t cisco
@@ -314,7 +316,9 @@ f5;command;f5::ShowZebOSsockets;lsof -i :179
 f5;command;f5::ShowRouteStatic;tmsh show /net route static
 #f5;command;f5::ShowSslCrt;ls --full-time --color=never /config/ssl/ssl.crt
 #f5;command;f5::ShowSslKey;ls --full-time --color=never /config/ssl/ssl.key
-f5;command;f5::WriteTermTMSH;tmsh -q list
+f5;command;f5::WriteTermTMSH;tmsh save sys config file /tmp/rancid && cat /tmp/rancid && shred -u /tmp/rancid
+f5;command;f5::WriteTermTMSH;tmsh_list_recursive
+f5;command;f5::WriteTermTMSH;tmsh -q -c 'list recursive'
 #
 force10;script;f10rancid
 force10;login;clogin

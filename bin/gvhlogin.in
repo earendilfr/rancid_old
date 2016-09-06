@@ -70,14 +70,14 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 			regexp {ssh(:([^[:space:]]+))*} $prog methcmd suffix port
 			set cmd $sshcmd
 			if {"$port" != ""} {
-                		append cmd " -p $port"
+                append cmd " -p $port"
 			}
 			if {"$identfile" != ""} {
-                		append cmd " -i $identfile"
+                append cmd " -i $identfile"
 			}
-			if {"$cyphertype" != ""} {
-                		append cmd " -c $cyphertype"
-            		}
+            if {"$cyphertype" != ""} {
+                append cmd " -c $cyphertype"
+            }
 			set retval [catch {eval spawn [split "$cmd -x -l $user $router" { }]} reason]
 			if { $retval } {
 				send_user "\nError: $cmd failed: $reason\n"

@@ -284,6 +284,7 @@ sub WriteTermTMSH {
     ProcessHistory("","","","#\n");
     while (<$INPUT>) {
         tr/\015//d;
+        return(0) if ($found_end);  # Only do this routine once
         if (/^$prompt/) { $found_end++; last; }
         next if (/^(\s*|\s*$cmd\s*)$/);
 
@@ -302,7 +303,7 @@ sub WriteTermTMSH {
     }
     
     if ($lines < 3) {
-        printf(STDERR "ERROR: $host configuration appears truncated.\n");
+        printf(STDERR "ERROR: $host configuration appears truncated.\n") if ($debug);
         $found_end = 0;
         return(-1);
     }

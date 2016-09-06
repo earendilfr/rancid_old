@@ -152,73 +152,71 @@ sub loadtype {
     $commandcnt = 0;
 
     if (!defined($devtype) || length($devtype) == 0) {
-	print STDERR "loadtype(): device_type is empty\n";
-	return 1;
+	    print STDERR "loadtype(): device_type is empty\n";
+	    return 1;
     }
     print STDERR "loadtype: device type $devtype\n" if ($debug);
 
     # which device type configuration file has the definition of $devtype?
-    foreach $file ("@sysconfdir@/rancid.types.base",
-		   "@sysconfdir@/rancid.types.conf") {
-	$line = 0;
-	open(INPUT, "< $file") || die "Could not open $file: $!";
-	while (<INPUT>) {
-	    $line++;
-	    chomp;
-	    next if (/^\s*$/ || /^\s*#/);
-	    my($type, $directive, $value, $value2) = split('\;');
-	    $type =~ tr/[A-Z]/[a-z]/;
-	    $directive =~ tr/[A-Z]/[a-z]/;
+    foreach $file ("/opt/rancid/etc/rancid.types.base","/opt/rancid/etc/rancid.types.conf") {
+    	$line = 0;
+	    open(INPUT, "< $file") || die "Could not open $file: $!";
+	    while (<INPUT>) {
+	        $line++;
+	        chomp;
+	        next if (/^\s*$/ || /^\s*#/);
+	        my($type, $directive, $value, $value2) = split('\;');
+    	    $type =~ tr/[A-Z]/[a-z]/;
+	        $directive =~ tr/[A-Z]/[a-z]/;
 
-	    next if ($type ne $devtype);
-	    if (!$matched) {
-		$matched++;
-		print STDERR "loadtype: found device type ".
-			     "$devtype in $file\n" if ($debug);
-	    }
-	    if ($directive eq "script") {
-		$script = $value;
-	    } elsif ($directive eq "login") {
-		$lscript = $value;
-	    } elsif ($directive eq "module") {
-		push(@modules, $value);
-	    } elsif ($directive eq "inloop") {
-		$inloop = $value;
-	    } elsif ($directive eq "command") {
-		push(@commandtable, {$value2, $value});
-	    } else {
-		print STDERR "loadtype: unknown directive ".
-			     "$directive at $file:$line\n";
-		close(INPUT);
-		return(-1);
-	    }
-	}
-	close(INPUT);
+	        next if ($type ne $devtype);
+    	    if (!$matched) {
+	        	$matched++;
+        		print STDERR "loadtype: found device type ".
+			        "$devtype in $file\n" if ($debug);
+    	    }
+	        if ($directive eq "script") {
+		        $script = $value;
+    	    } elsif ($directive eq "login") {
+	        	$lscript = $value;
+    	    } elsif ($directive eq "module") {
+	        	push(@modules, $value);
+    	    } elsif ($directive eq "inloop") {
+	        	$inloop = $value;
+    	    } elsif ($directive eq "command") {
+	        	push(@commandtable, {$value2, $value});
+    	    } else {
+	        	print STDERR "loadtype: unknown directive ".
+			        "$directive at $file:$line\n";
+        		close(INPUT);
+		        return(-1);
+        	}
+    	}
+	    close(INPUT);
 
-	# do not parse rancid.types.conf if we found any device type matches
-	# in rancid.types.base.
-	last if ($matched);
+    	# do not parse rancid.types.conf if we found any device type matches
+	    # in rancid.types.base.
+    	last if ($matched);
     }
 
     # load device-type specific modules
     if (length($#modules)) {
-	my($module);
+    	my($module);
 
-	foreach $module (@modules) {
-	eval {
-	    (my $file = $module) =~ s/::/\//g;
-	    require $file . '.pm';
-	    # call module->import(); we expect 0 as success, as god intended it
-	    # XXX how the fuck is this done w/o the eval and w/o a temp var?
-	    eval($module ."::import();") ? 0 : 1;
-	} or do {
-	    # Module load failed
-	    my($error) = $@;
-	    print STDERR "loadtype: loading $module failed: ".
-			 "$error\n";
-	    return(-1);
-	};
-	}
+	    foreach $module (@modules) {
+        	eval {
+	            (my $file = $module) =~ s/::/\//g;
+        	    require $file . '.pm';
+        	    # call module->import(); we expect 0 as success, as god intended it
+	            # XXX how the fuck is this done w/o the eval and w/o a temp var?
+        	    eval($module ."::import();") ? 0 : 1;
+	        } or do {
+        	    # Module load failed
+	            my($error) = $@;
+        	    print STDERR "loadtype: loading $module failed: $error\n";
+        	    return(-1);
+	        };
+	    }
     }
 
     # Use an array to preserve the order of the commands and a hash for mapping
@@ -231,12 +229,12 @@ sub loadtype {
     $cmds_regexp = join("|", map quotemeta($_), @commands);
 
     if ($main::opt_C) {
-	if (!defined($lscript)) {
-	    printf(STDERR "$devtype: login script not defined\n");
-	    exit(1);
-	}
-	print "$lscript -t $timeo -c \'$commandstr\' $host\n";
-	exit(0);
+	    if (!defined($lscript)) {
+	        printf(STDERR "$devtype: login script not defined\n");
+	        exit(1);
+	    }
+    	print "$lscript -t $timeo -c \'$commandstr\' $host\n";
+	    exit(0);
     }
 
     0;
