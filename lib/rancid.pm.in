@@ -18,41 +18,42 @@ require(Exporter);
 our @ISA = qw(Exporter);
 
 our $VERSION;
-our @commandtable;			# command lists
+our @commandtable;            # command lists
 our %commands;
 our @commands;
-our $commandcnt;			# number of members in @commandtable
-our $commandstr;			# command string for lscript -c
-our $cmds_regexp;			# command regex for matching input
-our $devtype;				# device type argument
-our $filter_commstr;			# SNMP community string filtering
-our $filter_pwds;			# password filtering mode
-our $aclsort;				# ACL sorting mode
-our $aclfilterseq;			# ACL sequence filtering mode
-our $log;				# log cmdline option
-our $debug;				# debug cmdline option
-our $file;				# file cmdline option
-our $host;				# hostname from cmdline
-our $clean_run;				# successful run
-our $found_end;				# found end of the config
-our $timeo;				# login script timeout in seconds
-our $prompt;				# device prompt regex
+our $commandcnt;            # number of members in @commandtable
+our $commandstr;            # command string for lscript -c
+our $cmds_regexp;            # command regex for matching input
+our $devtype;                # device type argument
+our $filter_commstr;            # SNMP community string filtering
+our $filter_osc;            # oscillating data filtering mode
+our $filter_pwds;            # password filtering mode
+our $aclsort;                # ACL sorting mode
+our $aclfilterseq;            # ACL sequence filtering mode
+our $log;                # log cmdline option
+our $debug;                # debug cmdline option
+our $file;                # file cmdline option
+our $host;                # hostname from cmdline
+our $clean_run;                # successful run
+our $found_end;                # found end of the config
+our $timeo;                # login script timeout in seconds
+our $prompt;                # device prompt regex
 
 
-use vars qw{$script $lscript @modules};	# script, login script, module name(s)
-use vars qw{$inloop}		;	# inloop func
-use vars qw{$command $hist_tag};	# ProcessHistory state
-use vars qw{%history @history};		# ProcessHistory state
+use vars qw{$script $lscript @modules};    # script, login script, module name(s)
+use vars qw{$inloop}        ;    # inloop func
+use vars qw{$command $hist_tag};    # ProcessHistory state
+use vars qw{%history @history};        # ProcessHistory state
 our @EXPORT = qw($VERSION $devtype $script $lscript @modules $inloop
-		@commandtable
-		%commands @commands $commandcnt
-		$commandstr $cmds_regexp
-		$filter_commstr $filter_pwds $aclsort $aclfilterseq
-		$log $debug $file $host $clean_run $found_end $timeo $prompt
-		rancidinit loadtype
-		ProcessHistory numerically keynsort keysort valsort numsort
-		ipsort ipaddrval sortbyipaddr
-		RunCommand);
+        @commandtable
+        %commands @commands $commandcnt
+        $commandstr $cmds_regexp
+        $filter_commstr $filter_osc $filter_pwds $aclsort $aclfilterseq
+        $log $debug $file $host $clean_run $found_end $timeo $prompt
+        rancidinit loadtype
+        ProcessHistory numerically keynsort keysort valsort numsort
+        ipsort ipaddrval sortbyipaddr
+        RunCommand);
 
 BEGIN {
     $VERSION = '@VERSION@';
@@ -73,11 +74,11 @@ sub rancidinit {
     my($i);
 
     if ($main::opt_V) {
-	print "@PACKAGE@ @VERSION@\n";
-	exit(0);
+    print "@PACKAGE@ @VERSION@\n";
+    exit(0);
     }
 
-    $command = $hist_tag = "";		# ProcessHistory state
+    $command = $hist_tag = "";        # ProcessHistory state
     for (keys(%history)) {
         delete $history{$_};
     }
@@ -90,49 +91,54 @@ sub rancidinit {
     $host = defined($ARGV[0]) ? $ARGV[0] : "";
     $clean_run = 0;
     $found_end = 0;
-    $timeo = 90;			# login script timeout in seconds
+    $timeo = 90;            # login script timeout in seconds
 
-    $aclsort = "ipsort";		# ACL sorting mode
+    $aclsort = "ipsort";        # ACL sorting mode
 
     # determine ACL sorting mode
     if (defined($ENV{"ACLSORT"}) && $ENV{"ACLSORT"} =~ /no/i) {
-	$aclsort = "";
+    $aclsort = "";
     }
     if (defined($ENV{"ACLFILTERSEQ"}) && $ENV{"ACLFILTERSEQ"} =~ /no/i) {
-	$aclfilterseq = "0";
+    $aclfilterseq = "0";
     } else {
-	$aclfilterseq = "1";
+    $aclfilterseq = "1";
     }
 
     # determine community string filtering mode
-    if (defined($ENV{"NOCOMMSTR"}) &&
-	($ENV{"NOCOMMSTR"} =~ /yes/i || $ENV{"NOCOMMSTR"} =~ /^$/)) {
-	$filter_commstr = 1;
+    if (defined($ENV{"NOCOMMSTR"}) && $ENV{"NOCOMMSTR"} =~ /yes/i) {
+    $filter_commstr = 1;
     } else {
-	$filter_commstr = 0;
+    $filter_commstr = 0;
+    }
+    # determine oscillating data filtering mode
+    if (defined($ENV{"FILTER_OSC"}) && $ENV{"FILTER_OSC"} =~ /no/i) {
+    $filter_osc = 0;
+    } else {
+    $filter_osc = 1;
     }
     # determine password filtering mode
     if (defined($ENV{"FILTER_PWDS"}) && $ENV{"FILTER_PWDS"} =~ /no/i) {
-	$filter_pwds = 0;
+    $filter_pwds = 0;
     } elsif (defined($ENV{"FILTER_PWDS"}) && $ENV{"FILTER_PWDS"} =~ /all/i) {
-	$filter_pwds = 2;
+    $filter_pwds = 2;
     } else {
-	$filter_pwds = 1;
+    $filter_pwds = 1;
     }
 
     if (!$main::opt_C && length($host) == 0) {
-	if ($main::file) {
-	    print(STDERR "Too few arguments: file name required\n");
-	    exit(1);
-	} else {
-	    print(STDERR "Too few arguments: host name required\n");
-	    exit(1);
-	}
+    if ($main::file) {
+        print(STDERR "Too few arguments: file name required\n");
+        exit(1);
+    } else {
+        print(STDERR "Too few arguments: host name required\n");
+        exit(1);
+    }
     }
 
     if (!defined($main::opt_t) || length($main::opt_t) == 0) {
-	print(STDERR "Too few arguments: -t option is required\n");
-	exit(1);
+    print(STDERR "Too few arguments: -t option is required\n");
+    exit(1);
     }
 
     # make OUTPUT unbuffered if debugging
@@ -152,71 +158,71 @@ sub loadtype {
     $commandcnt = 0;
 
     if (!defined($devtype) || length($devtype) == 0) {
-	    print STDERR "loadtype(): device_type is empty\n";
-	    return 1;
+    print STDERR "loadtype(): device_type is empty\n";
+    return 1;
     }
     print STDERR "loadtype: device type $devtype\n" if ($debug);
 
     # which device type configuration file has the definition of $devtype?
     foreach $file ("/opt/rancid/etc/rancid.types.base","/opt/rancid/etc/rancid.types.conf") {
-    	$line = 0;
-	    open(INPUT, "< $file") || die "Could not open $file: $!";
-	    while (<INPUT>) {
-	        $line++;
-	        chomp;
-	        next if (/^\s*$/ || /^\s*#/);
-	        my($type, $directive, $value, $value2) = split('\;');
-    	    $type =~ tr/[A-Z]/[a-z]/;
-	        $directive =~ tr/[A-Z]/[a-z]/;
+        $line = 0;
+        open(INPUT, "< $file") || die "Could not open $file: $!";
+        while (<INPUT>) {
+            $line++;
+            chomp;
+            next if (/^\s*$/ || /^\s*#/);
+            my($type, $directive, $value, $value2) = split('\;');
+            $type =~ tr/[A-Z]/[a-z]/;
+            $directive =~ tr/[A-Z]/[a-z]/;
 
-	        next if ($type ne $devtype);
-    	    if (!$matched) {
-	        	$matched++;
-        		print STDERR "loadtype: found device type ".
-			        "$devtype in $file\n" if ($debug);
-    	    }
-	        if ($directive eq "script") {
-		        $script = $value;
-    	    } elsif ($directive eq "login") {
-	        	$lscript = $value;
-    	    } elsif ($directive eq "module") {
-	        	push(@modules, $value);
-    	    } elsif ($directive eq "inloop") {
-	        	$inloop = $value;
-    	    } elsif ($directive eq "command") {
-	        	push(@commandtable, {$value2, $value});
-    	    } else {
-	        	print STDERR "loadtype: unknown directive ".
-			        "$directive at $file:$line\n";
-        		close(INPUT);
-		        return(-1);
-        	}
-    	}
-	    close(INPUT);
+            next if ($type ne $devtype);
+            if (!$matched) {
+                $matched++;
+                print STDERR "loadtype: found device type ".
+                    "$devtype in $file\n" if ($debug);
+            }
+            if ($directive eq "script") {
+                $script = $value;
+            } elsif ($directive eq "login") {
+                $lscript = $value;
+            } elsif ($directive eq "module") {
+                push(@modules, $value);
+            } elsif ($directive eq "inloop") {
+                $inloop = $value;
+            } elsif ($directive eq "command") {
+                push(@commandtable, {$value2, $value});
+            } else {
+                print STDERR "loadtype: unknown directive ".
+                    "$directive at $file:$line\n";
+                close(INPUT);
+                return(-1);
+            }
+        }
+        close(INPUT);
 
-    	# do not parse rancid.types.conf if we found any device type matches
-	    # in rancid.types.base.
-    	last if ($matched);
+        # do not parse rancid.types.conf if we found any device type matches
+        # in rancid.types.base.
+        last if ($matched);
     }
 
     # load device-type specific modules
     if (length($#modules)) {
-    	my($module);
+        my($module);
 
-	    foreach $module (@modules) {
-        	eval {
-	            (my $file = $module) =~ s/::/\//g;
-        	    require $file . '.pm';
-        	    # call module->import(); we expect 0 as success, as god intended it
-	            # XXX how the fuck is this done w/o the eval and w/o a temp var?
-        	    eval($module ."::import();") ? 0 : 1;
-	        } or do {
-        	    # Module load failed
-	            my($error) = $@;
-        	    print STDERR "loadtype: loading $module failed: $error\n";
-        	    return(-1);
-	        };
-	    }
+        foreach $module (@modules) {
+            eval {
+                (my $file = $module) =~ s/::/\//g;
+                require $file . '.pm';
+                # call module->import(); we expect 0 as success, as god intended it
+                # XXX how the fuck is this done w/o the eval and w/o a temp var?
+                eval($module ."::import();") ? 0 : 1;
+            } or do {
+                # Module load failed
+                my($error) = $@;
+                print STDERR "loadtype: loading $module failed: $error\n";
+                return(-1);
+            };
+        }
     }
 
     # Use an array to preserve the order of the commands and a hash for mapping
@@ -229,12 +235,12 @@ sub loadtype {
     $cmds_regexp = join("|", map quotemeta($_), @commands);
 
     if ($main::opt_C) {
-	    if (!defined($lscript)) {
-	        printf(STDERR "$devtype: login script not defined\n");
-	        exit(1);
-	    }
-    	print "$lscript -t $timeo -c \'$commandstr\' $host\n";
-	    exit(0);
+        if (!defined($lscript)) {
+            printf(STDERR "$devtype: login script not defined\n");
+            exit(1);
+        }
+        print "$lscript -t $timeo -c \'$commandstr\' $host\n";
+        exit(0);
     }
 
     0;
@@ -249,20 +255,20 @@ sub ProcessHistory {
     my($new_hist_tag, $new_command, $command_string, @string) = (@_);
 
     if ((($new_hist_tag ne $hist_tag) || ($new_command ne $command))
-	&& scalar(%history)) {
-	print eval "$command \%history";
-	undef %history;
+    && scalar(%history)) {
+    print eval "$command \%history";
+    undef %history;
     }
     if (($new_hist_tag) && ($new_command) && ($command_string)) {
-	if ($history{$command_string}) {
-	    $history{$command_string} = "$history{$command_string}@string";
-	} else {
-	    $history{$command_string} = "@string";
-	}
-    } elsif (($new_hist_tag) && ($new_command)) {
-	$history{++$#history} = "@string";
+    if ($history{$command_string}) {
+        $history{$command_string} = "$history{$command_string}@string";
     } else {
-	print "@string";
+        $history{$command_string} = "@string";
+    }
+    } elsif (($new_hist_tag) && ($new_command)) {
+    $history{++$#history} = "@string";
+    } else {
+    print "@string";
     }
     $hist_tag = $new_hist_tag;
     $command = $new_command;
@@ -279,7 +285,7 @@ sub keynsort {
     my($i) = 0;
     my($key, @sorted_lines);
     foreach $key (sort numerically keys(%lines)) {
-	$sorted_lines[$i++] = $lines{$key};
+    $sorted_lines[$i++] = $lines{$key};
     }
     @sorted_lines;
 }
@@ -291,7 +297,7 @@ sub keysort {
     my($i) = 0;
     my($key, @sorted_lines);
     foreach $key (sort keys(%lines)) {
-	$sorted_lines[$i++] = $lines{$key};
+    $sorted_lines[$i++] = $lines{$key};
     }
     @sorted_lines;
 }
@@ -303,7 +309,7 @@ sub valsort {
     my($i) = 0;
     my($key, @sorted_lines);
     foreach $key (sort values(%lines)) {
-	$sorted_lines[$i++] = $key;
+    $sorted_lines[$i++] = $key;
     }
     @sorted_lines;
 }
@@ -314,7 +320,7 @@ sub numsort {
     my($i) = 0;
     my($num, @sorted_lines);
     foreach $num (sort {$a <=> $b} keys(%lines)) {
-	$sorted_lines[$i++] = $lines{$num};
+    $sorted_lines[$i++] = $lines{$num};
     }
     @sorted_lines;
 }
@@ -326,7 +332,7 @@ sub ipsort {
     my($i) = 0;
     my($addr, @sorted_lines);
     foreach $addr (sort sortbyipaddr keys(%lines)) {
-	$sorted_lines[$i++] = $lines{$addr};
+    $sorted_lines[$i++] = $lines{$addr};
     }
     @sorted_lines;
 }
@@ -339,25 +345,25 @@ sub ipaddrval {
     my($norder);
 
     if ($a =~ /:/) {
-	my($l);
-	($a, $l) = split(/\//, $a);
-	if (!defined($l)) {
-	    $l ||= 128;
-	}
-	$norder = inet_pton(AF_INET6, $a);
-	if (defined($norder)) {
-	    return unpack("H*", $norder) . unpack("H*", pack("C", $l));
-	}
+    my($l);
+    ($a, $l) = split(/\//, $a);
+    if (!defined($l)) {
+        $l ||= 128;
+    }
+    $norder = inet_pton(AF_INET6, $a);
+    if (defined($norder)) {
+        return unpack("H*", $norder) . unpack("H*", pack("C", $l));
+    }
     } else {
-	my($l);
-	($a, $l) = split(/\//, $a);
-	if (!defined($l)) {
-	    $l = 32;
-	}
-	$norder = inet_pton(AF_INET, $a);
-	if (defined($norder)) {
-	    return(unpack("H*", $norder) . unpack("H*", pack("C", $l)));
-	}
+    my($l);
+    ($a, $l) = split(/\//, $a);
+    if (!defined($l)) {
+        $l = 32;
+    }
+    $norder = inet_pton(AF_INET, $a);
+    if (defined($norder)) {
+        return(unpack("H*", $norder) . unpack("H*", pack("C", $l)));
+    }
     }
 
     # otherwise return the original key value, so as not to sort on null
@@ -376,8 +382,8 @@ sub RunCommand {
     print STDERR "    In RunCommand: $_" if ($debug);
 
     while (<$INPUT>) {
-	tr/\015//d;
-	last if (/^$prompt/);
+    tr/\015//d;
+    last if (/^$prompt/);
     }
     return(0);
 }

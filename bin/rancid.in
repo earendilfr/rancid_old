@@ -126,12 +126,10 @@ if (length($#modules)) {
 # open the input, a pre-collected file or start a login for a login stream or
 # temporary file
 if ($file) {
-    print STDERR "opening file $host\n" if ($debug);
-    print STDOUT "opening file $host\n" if ($log);
+    print(STDERR "opening file $host\n") if ($debug || $log);
     open(INPUT,"<$host") || die "open failed for $host: $!\n";
 } else {
-    print STDERR "executing $lscript -t $timeo -c\"$commandstr\" $host\n" if ($debug);
-    print STDOUT "executing $lscript -t $timeo -c\"$commandstr\" $host\n" if ($log);
+    print(STDERR "executing $lscript -t $timeo -c\"$commandstr\" $host\n") if ($debug || $log);
     if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
 	system "$lscript -t $timeo -c \"$commandstr\" $host </dev/null > $host.raw 2>&1" || die "$lscript failed for $host: $!\n";
 	open(INPUT, "< $host.raw") || die "clogin failed for $host: $!\n";
@@ -166,8 +164,7 @@ if (!length($opt_c) && (scalar(%commands) || !$clean_run || !$found_end)) {
 	printf(STDERR "$host: missed cmd(s): %s\n", join(',', keys(%commands))) if ($debug);
     }
     if (!$clean_run || !$found_end) {
-	print STDOUT "$host: End of run not found\n";
-	print STDERR "$host: End of run not found\n" if ($debug);
+	print(STDERR "$host: End of run not found\n");
 	system("/usr/bin/tail -1 $host.new");
     }
     unlink "$host.new" if (! $debug);

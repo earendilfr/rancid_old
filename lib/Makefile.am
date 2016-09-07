@@ -7,9 +7,10 @@
 AUTOMAKE_OPTIONS=foreign no-dependencies
 
 my_pkglibdir = $(pkglibdir)
-my_pkglib_DATA = rancid.pm acos.pm arbor.pm ciscowlc.pm dell.pm eos.pm \
-                 foundry.pm ios.pm iosxr.pm junos.pm mrv.pm nxos.pm panos.pm \
-                 rbt.pm wavesvros.pm
+my_pkglib_DATA = rancid.pm acos.pm aeos.pm arbor.pm ciscowlc.pm \
+		 dell.pm edgemax.pm edgerouter.pm eos.pm exos.pm foundry.pm \
+                 h3c.pm ios.pm iosxr.pm junos.pm mrv.pm nxos.pm panos.pm rbt.pm \
+		 wavesvros.pm
 pkglib_in = $(my_pkglib_DATA:%=%.in)
 
 RANLIB= :
@@ -54,17 +55,28 @@ $(pkglib_in:%.in=%): Makefile $(top_builddir)/config.status
 # XXX there must be a better way to produce these dependencies, perhaps in
 #     configure.
 acos.pm: acos.pm.in
+aeos.pm: aeos.pm.in
 arbor.pm: arbor.pm.in
-dell.pm: dell.pm.in
+arbor.pm: arbor.pm.in
+bigip.pm: bigip.pm.in
+checkpoint.pm: checkpoint.pm.in
 ciscowlc.pm: ciscowlc.pm.in
+dell.pm: dell.pm.in
+edgemax.pm: edgemax.pm.in
+edgerouter.pm: edgerouter.pm.in
 eos.pm: eos.pm.in
+exos.pm: exos.pm.in
 foundry.pm: foundry.pm.in
+gvh.pm: gvh.pm.in
+h3c.pm: h3c.pm.in
 ios.pm: ios.pm.in
 iosxr.pm: iosxr.pm.in
 junos.pm: junos.pm.in
 rancid.pm: rancid.pm.in
+meinberg.pm: meinberg.pm.in
 mrv.pm: mrv.pm.in
 nxos.pm: nxos.pm.in
 panos.pm: panos.pm.in
+rsa.pm: rsa.pm.in
 rbt.pm: rbt.pm.in
 wavesvros.pm: wavesvros.pm.in

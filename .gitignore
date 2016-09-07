@@ -1,9 +1,6 @@
 patch/*
-bin/*login
-bin/*rancid
-bin/login_top
-bin/rtftpcopy
-bin/.deps
+bin/*
+!bin/*.in
 Makefile
 */Makefile
 config.*

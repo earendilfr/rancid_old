@@ -305,7 +305,7 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype } {
 	} elseif [string match "ssh*" $prog] {
 	    # ssh to the router & try to login with or without an identfile.
 	    regexp {ssh(:([^[:space:]]+))*} $prog methcmd suffix port
-        set cmd $sshcmd
+	    set cmd $sshcmd
 	    if {"$port" != ""} {
             append cmd " -p $port"
         }
@@ -799,7 +799,6 @@ foreach router [lrange $argv $i end] {
         set cyphertype $cypher
     } else {
         set cyphertype [find cyphertype $router]
-        #if { "$cyphertype" == "" } { set cyphertype "3des" }
     }
 
     # Figure out connection method

@@ -62,7 +62,8 @@ $found_env = 0;
 $found_diag = 0;
 $timeo = 90;			# clogin timeout in seconds
 
-my(%filter_pwds);		# password filtering mode
+my($filter_osc);			# oscillating data filtering mode
+my(%filter_pwds);			# password filtering mode
 
 # This routine is used to print out the router configuration
 sub ProcessHistory {
@@ -246,12 +247,10 @@ select(OUTPUT);
 if ($debug) { $| = 1; }
 
 if ($file) {
-    print STDERR "opening file $host\n" if ($debug);
-    print STDOUT "opening file $host\n" if ($log);
+    print(STDERR "opening file $host\n") if ($debug || $log);
     open(INPUT,"<$host") || die "open failed for $host: $!\n";
 } else {
-    print STDERR "executing tlogin -t $timeo -c\"$commandstr\" $host\n" if ($debug);
-    print STDOUT "executing tlogin -t $timeo -c\"$commandstr\" $host\n" if ($log);
+    print(STDERR "executing tlogin -t $timeo -c\"$commandstr\" $host\n") if ($debug || $log);
     if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
 	system "tlogin -t $timeo -c \"$commandstr\" $host </dev/null > $host.raw 2>&1" || die "tlogin failed for $host: $!\n";
 	open(INPUT, "< $host.raw") || die "tlogin failed for $host: $!\n";
@@ -260,6 +259,12 @@ if ($file) {
     }
 }
 
+# determine oscillating data filtering mode
+if (defined($ENV{"FILTER_OSC"}) && $ENV{"FILTER_OSC"} =~ /no/i) {
+    $filter_osc = 0;
+} else {
+    $filter_osc = 1;
+}
 # determine password filtering mode
 if ($ENV{"FILTER_PWDS"} =~ /no/i) {
     $filter_pwds = 0;
@@ -327,8 +332,7 @@ if (scalar(%commands) || !$clean_run || !$found_end) {
 	printf(STDERR "$host: missed cmd(s): %s\n", join(',', keys(%commands))) if ($debug);
     }
     if (!$clean_run || !$found_end) {
-	print STDOUT "$host: End of run not found\n";
-	print STDERR "$host: End of run not found\n" if ($debug);
+	print(STDERR "$host: End of run not found\n");
 	system("/usr/bin/tail -1 $host.new");
     }
     unlink "$host.new" if (! $debug);
