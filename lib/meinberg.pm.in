@@ -155,7 +155,7 @@ sub ShowNetwork {
     return(0);
 }
 
-sub ShowConfig {
+sub ShowConfiguration {
     my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowNetwork: $_" if ($debug);
 

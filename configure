@@ -6080,94 +6080,52 @@ ac_config_files="$ac_config_files include/version.h"
 
 ac_config_headers="$ac_config_headers include/config.h"
 
-
 ac_config_files="$ac_config_files bin/login_top"
-
-
 
 copyright=$srcdir/COPYING
 login_top=$srcdir/bin/login_top
 
 ac_config_files="$ac_config_files bin/control_rancid"
-
 ac_config_files="$ac_config_files bin/a10login"
-
 ac_config_files="$ac_config_files bin/agmrancid"
-
 ac_config_files="$ac_config_files bin/alogin bin/arancid"
-
 ac_config_files="$ac_config_files bin/anlogin"
-
-ac_config_files="$ac_config_files bin/arrancid"
-
 ac_config_files="$ac_config_files bin/avologin bin/avorancid"
-
 ac_config_files="$ac_config_files bin/blogin bin/brancid"
-
+ac_config_files="$ac_config_files bin/brlogin"
 ac_config_files="$ac_config_files bin/bntlogin bin/bntrancid"
-
 ac_config_files="$ac_config_files bin/cat5rancid bin/clogin"
-
 ac_config_files="$ac_config_files bin/complogin"
-
 ac_config_files="$ac_config_files bin/cssrancid"
-
 ac_config_files="$ac_config_files bin/dllogin"
-
 ac_config_files="$ac_config_files bin/elogin bin/erancid"
-
-ac_config_files="$ac_config_files bin/f5login"
-
 ac_config_files="$ac_config_files bin/f10rancid"
-
+ac_config_files="$ac_config_files bin/f5login bin/f5rancid"
 ac_config_files="$ac_config_files bin/flogin"
-
 ac_config_files="$ac_config_files bin/fnlogin bin/fnrancid"
-
+ac_config_files="$ac_config_files bin/gvhlogin"
 ac_config_files="$ac_config_files bin/h3clogin"
-
 ac_config_files="$ac_config_files bin/hlogin bin/hrancid"
-
 ac_config_files="$ac_config_files bin/htlogin bin/htrancid"
-
-ac_config_files="$ac_config_files bin/jlogin bin/jerancid"
-
+ac_config_files="$ac_config_files bin/jerancid"
+ac_config_files="$ac_config_files bin/jlogin"
 ac_config_files="$ac_config_files bin/llogin"
-
-ac_config_files="$ac_config_files bin/mrancid bin/mrvlogin"
-
+ac_config_files="$ac_config_files bin/mrancid"
+ac_config_files="$ac_config_files bin/mrvlogin"
 ac_config_files="$ac_config_files bin/mtrancid bin/mtlogin"
-
 ac_config_files="$ac_config_files bin/nlogin bin/nrancid"
-
 ac_config_files="$ac_config_files bin/nslogin bin/nsrancid"
-
-ac_config_files="$ac_config_files bin/panlogin"
-
-ac_config_files="$ac_config_files bin/prancid"
-
+ac_config_files="$ac_config_files bin/panlogin bin/prancid"
 ac_config_files="$ac_config_files bin/rblogin"
-
 ac_config_files="$ac_config_files bin/rivlogin bin/rivrancid"
-
 ac_config_files="$ac_config_files bin/rrancid"
-
 ac_config_files="$ac_config_files bin/rtftpcopy"
-
-ac_config_files="$ac_config_files bin/srancid"
-
-ac_config_files="$ac_config_files bin/tlogin"
-
-ac_config_files="$ac_config_files bin/trancid"
-
-ac_config_files="$ac_config_files bin/xilogin bin/xirancid"
-
-ac_config_files="$ac_config_files bin/xrancid"
-
+ac_config_files="$ac_config_files bin/tlogin bin/trancid"
+ac_config_files="$ac_config_files bin/ulogin"
 ac_config_files="$ac_config_files bin/wlogin"
-
+ac_config_files="$ac_config_files bin/xilogin bin/xirancid"
+ac_config_files="$ac_config_files bin/xlogin"
 ac_config_files="$ac_config_files bin/zrancid"
-
 ac_config_files="$ac_config_files share/rtrfilter"
 
 
@@ -6925,11 +6883,11 @@ do
     "bin/alogin") CONFIG_FILES="$CONFIG_FILES bin/alogin" ;;
     "bin/arancid") CONFIG_FILES="$CONFIG_FILES bin/arancid" ;;
     "bin/anlogin") CONFIG_FILES="$CONFIG_FILES bin/anlogin" ;;
-    "bin/arrancid") CONFIG_FILES="$CONFIG_FILES bin/arrancid" ;;
     "bin/avologin") CONFIG_FILES="$CONFIG_FILES bin/avologin" ;;
     "bin/avorancid") CONFIG_FILES="$CONFIG_FILES bin/avorancid" ;;
     "bin/blogin") CONFIG_FILES="$CONFIG_FILES bin/blogin" ;;
     "bin/brancid") CONFIG_FILES="$CONFIG_FILES bin/brancid" ;;
+    "bin/brlogin") CONFIG_FILES="$CONFIG_FILES bin/brlogin" ;;
     "bin/bntlogin") CONFIG_FILES="$CONFIG_FILES bin/bntlogin" ;;
     "bin/bntrancid") CONFIG_FILES="$CONFIG_FILES bin/bntrancid" ;;
     "bin/cat5rancid") CONFIG_FILES="$CONFIG_FILES bin/cat5rancid" ;;
@@ -6940,22 +6898,24 @@ do
     "bin/elogin") CONFIG_FILES="$CONFIG_FILES bin/elogin" ;;
     "bin/erancid") CONFIG_FILES="$CONFIG_FILES bin/erancid" ;;
     "bin/f5login") CONFIG_FILES="$CONFIG_FILES bin/f5login" ;;
+    "bin/f5rancid") CONFIG_FILES="$CONFIG_FILES bin/f5rancid" ;;
     "bin/f10rancid") CONFIG_FILES="$CONFIG_FILES bin/f10rancid" ;;
     "bin/flogin") CONFIG_FILES="$CONFIG_FILES bin/flogin" ;;
     "bin/fnlogin") CONFIG_FILES="$CONFIG_FILES bin/fnlogin" ;;
     "bin/fnrancid") CONFIG_FILES="$CONFIG_FILES bin/fnrancid" ;;
+    "bin/gvhlogin") CONFIG_FILES="$CONFIG_FILES bin/gvhlogin" ;;
     "bin/h3clogin") CONFIG_FILES="$CONFIG_FILES bin/h3clogin" ;;
     "bin/hlogin") CONFIG_FILES="$CONFIG_FILES bin/hlogin" ;;
     "bin/hrancid") CONFIG_FILES="$CONFIG_FILES bin/hrancid" ;;
     "bin/htlogin") CONFIG_FILES="$CONFIG_FILES bin/htlogin" ;;
     "bin/htrancid") CONFIG_FILES="$CONFIG_FILES bin/htrancid" ;;
-    "bin/jlogin") CONFIG_FILES="$CONFIG_FILES bin/jlogin" ;;
     "bin/jerancid") CONFIG_FILES="$CONFIG_FILES bin/jerancid" ;;
+    "bin/jlogin") CONFIG_FILES="$CONFIG_FILES bin/jlogin" ;;
     "bin/llogin") CONFIG_FILES="$CONFIG_FILES bin/llogin" ;;
     "bin/mrancid") CONFIG_FILES="$CONFIG_FILES bin/mrancid" ;;
     "bin/mrvlogin") CONFIG_FILES="$CONFIG_FILES bin/mrvlogin" ;;
-    "bin/mtrancid") CONFIG_FILES="$CONFIG_FILES bin/mtrancid" ;;
     "bin/mtlogin") CONFIG_FILES="$CONFIG_FILES bin/mtlogin" ;;
+    "bin/mtrancid") CONFIG_FILES="$CONFIG_FILES bin/mtrancid" ;;
     "bin/nlogin") CONFIG_FILES="$CONFIG_FILES bin/nlogin" ;;
     "bin/nrancid") CONFIG_FILES="$CONFIG_FILES bin/nrancid" ;;
     "bin/nslogin") CONFIG_FILES="$CONFIG_FILES bin/nslogin" ;;
@@ -6967,13 +6927,13 @@ do
     "bin/rivrancid") CONFIG_FILES="$CONFIG_FILES bin/rivrancid" ;;
     "bin/rrancid") CONFIG_FILES="$CONFIG_FILES bin/rrancid" ;;
     "bin/rtftpcopy") CONFIG_FILES="$CONFIG_FILES bin/rtftpcopy" ;;
-    "bin/srancid") CONFIG_FILES="$CONFIG_FILES bin/srancid" ;;
     "bin/tlogin") CONFIG_FILES="$CONFIG_FILES bin/tlogin" ;;
     "bin/trancid") CONFIG_FILES="$CONFIG_FILES bin/trancid" ;;
+    "bin/ulogin") CONFIG_FILES="$CONFIG_FILES bin/ulogin" ;;
+    "bin/wlogin") CONFIG_FILES="$CONFIG_FILES bin/wlogin" ;;
     "bin/xilogin") CONFIG_FILES="$CONFIG_FILES bin/xilogin" ;;
     "bin/xirancid") CONFIG_FILES="$CONFIG_FILES bin/xirancid" ;;
-    "bin/xrancid") CONFIG_FILES="$CONFIG_FILES bin/xrancid" ;;
-    "bin/wlogin") CONFIG_FILES="$CONFIG_FILES bin/wlogin" ;;
+    "bin/xlogin") CONFIG_FILES="$CONFIG_FILES bin/xlogin" ;;
     "bin/zrancid") CONFIG_FILES="$CONFIG_FILES bin/zrancid" ;;
     "share/rtrfilter") CONFIG_FILES="$CONFIG_FILES share/rtrfilter" ;;
 
@@ -7709,11 +7669,11 @@ $as_echo X"$file" |
     "bin/alogin":F) chmod a+x $ac_file ;;
     "bin/arancid":F) chmod a+x $ac_file ;;
     "bin/anlogin":F) chmod a+x $ac_file ;;
-    "bin/arrancid":F) chmod a+x $ac_file ;;
     "bin/avologin":F) chmod a+x $ac_file ;;
     "bin/avorancid":F) chmod a+x $ac_file ;;
     "bin/blogin":F) chmod a+x $ac_file ;;
     "bin/brancid":F) chmod a+x $ac_file ;;
+    "bin/brlogin":F) chmod a+x $ac_file ;;
     "bin/bntlogin":F) chmod a+x $ac_file ;;
     "bin/bntrancid":F) chmod a+x $ac_file ;;
     "bin/cat5rancid":F) chmod a+x $ac_file ;;
@@ -7724,22 +7684,24 @@ $as_echo X"$file" |
     "bin/elogin":F) chmod a+x $ac_file ;;
     "bin/erancid":F) chmod a+x $ac_file ;;
     "bin/f5login":F) chmod a+x $ac_file ;;
+    "bin/f5rancid":F) chmod a+x $ac_file ;;
     "bin/f10rancid":F) chmod a+x $ac_file ;;
     "bin/flogin":F) chmod a+x $ac_file ;;
     "bin/fnlogin":F) chmod a+x $ac_file ;;
     "bin/fnrancid":F) chmod a+x $ac_file ;;
+    "bin/gvhlogin":F) chmod a+x $ac_file ;;
     "bin/h3clogin":F) chmod a+x $ac_file ;;
     "bin/hlogin":F) chmod a+x $ac_file ;;
     "bin/hrancid":F) chmod a+x $ac_file ;;
     "bin/htlogin":F) chmod a+x $ac_file ;;
     "bin/htrancid":F) chmod a+x $ac_file ;;
-    "bin/jlogin":F) chmod a+x $ac_file ;;
     "bin/jerancid":F) chmod a+x $ac_file ;;
+    "bin/jlogin":F) chmod a+x $ac_file ;;
     "bin/llogin":F) chmod a+x $ac_file ;;
     "bin/mrancid":F) chmod a+x $ac_file ;;
     "bin/mrvlogin":F) chmod a+x $ac_file ;;
-    "bin/mtrancid":F) chmod a+x $ac_file ;;
     "bin/mtlogin":F) chmod a+x $ac_file ;;
+    "bin/mtrancid":F) chmod a+x $ac_file ;;
     "bin/nlogin":F) chmod a+x $ac_file ;;
     "bin/nrancid":F) chmod a+x $ac_file ;;
     "bin/nslogin":F) chmod a+x $ac_file ;;
@@ -7751,13 +7713,13 @@ $as_echo X"$file" |
     "bin/rivrancid":F) chmod a+x $ac_file ;;
     "bin/rrancid":F) chmod a+x $ac_file ;;
     "bin/rtftpcopy":F) chmod a+x $ac_file ;;
-    "bin/srancid":F) chmod a+x $ac_file ;;
     "bin/tlogin":F) chmod a+x $ac_file ;;
     "bin/trancid":F) chmod a+x $ac_file ;;
+    "bin/ulogin":F) chmod a+x $ac_file ;;
+    "bin/wlogin":F) chmod a+x $ac_file ;;
     "bin/xilogin":F) chmod a+x $ac_file ;;
     "bin/xirancid":F) chmod a+x $ac_file ;;
-    "bin/xrancid":F) chmod a+x $ac_file ;;
-    "bin/wlogin":F) chmod a+x $ac_file ;;
+    "bin/xlogin":F) chmod a+x $ac_file ;;
     "bin/zrancid":F) chmod a+x $ac_file ;;
     "share/rtrfilter":F) chmod a+x $ac_file ;;
 

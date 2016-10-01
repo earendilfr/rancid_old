@@ -99,12 +99,12 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/include/config.h
 CONFIG_CLEAN_FILES = login_top control_rancid a10login agmrancid \
 	alogin arancid anlogin avologin avorancid blogin brancid \
-	brlogin bntlogin bntrancid cat5rancid clogin complogin cssrancid dllogin elogin \
-	erancid f5login f10rancid flogin fnlogin fnrancid h3clogin hlogin \
-	hrancid htlogin htrancid jlogin jerancid llogin mrancid mrvlogin \
-	mtrancid mtlogin nlogin nrancid nslogin nsrancid panlogin \
-	prancid rblogin rivlogin rivrancid rrancid rtftpcopy tlogin \
-	trancid xilogin xirancid xlogin ulogin wlogin zrancid
+	brlogin bntlogin bntrancid cat5rancid clogin complogin cssrancid dllogin \
+	elogin erancid f5login f5rancid f10rancid flogin fnlogin fnrancid h3clogin \
+	hlogin hrancid htlogin htrancid jlogin jerancid llogin mrancid mrvlogin \
+	mtrancid mtlogin nlogin nrancid nslogin nsrancid panlogin prancid \
+	rblogin rivlogin rivrancid rrancid rtftpcopy tlogin trancid \
+	xilogin xirancid xlogin ulogin wlogin zrancid
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
@@ -196,31 +196,49 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/a10login.in \
-	$(srcdir)/agmrancid.in $(srcdir)/alogin.in \
-	$(srcdir)/anlogin.in $(srcdir)/arancid.in \
+am__DIST_COMMON = $(srcdir)/Makefile.in \
+	$(srcdir)/login_top.in $(srcdir)/control_rancid.in \
+	$(srcdir)/a10login.in \
+	$(srcdir)/agmrancid.in \
+	$(srcdir)/alogin.in $(srcdir)/arancid.in \
+	$(srcdir)/anlogin.in \
 	$(srcdir)/avologin.in $(srcdir)/avorancid.in \
-	$(srcdir)/blogin.in $(srcdir)/brancid.in $(srcdir)/brlogin.in \
+	$(srcdir)/blogin.in $(srcdir)/brancid.in \
+	$(srcdir)/brlogin.in \
 	$(srcdir)/bntlogin.in $(srcdir)/bntrancid.in \
 	$(srcdir)/cat5rancid.in $(srcdir)/clogin.in \
-	$(srcdir)/complogin.in $(srcdir)/control_rancid.in \
-	$(srcdir)/cssrancid.in $(srcdir)/dllogin.in \
+	$(srcdir)/complogin.in \
+	$(srcdir)/cssrancid.in \
+	$(srcdir)/dllogin.in \
 	$(srcdir)/elogin.in $(srcdir)/erancid.in \
-	$(srcdir)/f10rancid.in $(srcdir)/f5login.in \
-	$(srcdir)/flogin.in $(srcdir)/fnlogin.in $(srcdir)/fnrancid.in \
-	$(srcdir)/h3clogin.in $(srcdir)/hlogin.in $(srcdir)/hrancid.in \
-	$(srcdir)/htlogin.in $(srcdir)/htrancid.in $(srcdir)/jerancid.in \
-	$(srcdir)/jlogin.in $(srcdir)/login_top.in $(srcdir)/llogin.in \
-	$(srcdir)/mrancid.in $(srcdir)/mrvlogin.in \
-	$(srcdir)/mtlogin.in $(srcdir)/mtrancid.in $(srcdir)/nlogin.in \
-	$(srcdir)/nrancid.in $(srcdir)/nslogin.in \
-	$(srcdir)/nsrancid.in $(srcdir)/panlogin.in \
-	$(srcdir)/prancid.in $(srcdir)/rblogin.in \
+	$(srcdir)/f10rancid.in \
+	$(srcdir)/f5login.in $(srcdir)/f5rancid.in \
+	$(srcdir)/flogin.in \
+	$(srcdir)/fnlogin.in $(srcdir)/fnrancid.in \
+	$(srcdir)/gvhlogin.in \
+	$(srcdir)/h3clogin.in \
+	$(srcdir)/hlogin.in $(srcdir)/hrancid.in \
+	$(srcdir)/htlogin.in $(srcdir)/htrancid.in \
+	$(srcdir)/jerancid.in \
+	$(srcdir)/jlogin.in \
+	$(srcdir)/llogin.in \
+	$(srcdir)/mrancid.in \
+	$(srcdir)/mrvlogin.in \
+	$(srcdir)/mtlogin.in $(srcdir)/mtrancid.in \
+	$(srcdir)/nlogin.in $(srcdir)/nrancid.in \
+	$(srcdir)/nslogin.in $(srcdir)/nsrancid.in \
+	$(srcdir)/panlogin.in $(srcdir)/prancid.in \
+	$(srcdir)/rblogin.in \
 	$(srcdir)/rivlogin.in $(srcdir)/rivrancid.in \
-	$(srcdir)/rrancid.in $(srcdir)/rtftpcopy.in \
-	$(srcdir)/tlogin.in $(srcdir)/trancid.in $(srcdir)/ulogin.in \
-	$(srcdir)/wlogin.in $(srcdir)/xilogin.in $(srcdir)/xirancid.in \
-	$(srcdir)/xlogin.in $(srcdir)/zrancid.in $(top_srcdir)/depcomp \
+	$(srcdir)/rrancid.in \
+	$(srcdir)/rtftpcopy.in \
+	$(srcdir)/tlogin.in $(srcdir)/trancid.in \
+	$(srcdir)/ulogin.in \
+	$(srcdir)/wlogin.in \
+	$(srcdir)/xilogin.in $(srcdir)/xirancid.in \
+	$(srcdir)/xlogin.in \
+	$(srcdir)/zrancid.in \
+	$(top_srcdir)/depcomp \
 	$(top_srcdir)/mkinstalldirs
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -352,7 +370,7 @@ top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 bin_SCRIPTS = a10login alogin agmrancid anlogin arancid avologin \
 	avorancid blogin brancid brlogin bntlogin bntrancid cat5rancid clogin complogin \
-	control_rancid cssrancid dllogin elogin erancid f5login \
+	control_rancid cssrancid dllogin elogin erancid f5login f5rancid \
 	f10rancid flogin fnlogin fnrancid h3clogin hlogin hrancid htlogin \
 	htrancid jerancid jlogin llogin mrancid mrvlogin mtlogin mtrancid \
 	nlogin nrancid nslogin nsrancid panlogin plogin rancid rblogin \
@@ -459,13 +477,13 @@ avorancid: $(top_builddir)/config.status $(srcdir)/avorancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 blogin: $(top_builddir)/config.status $(srcdir)/blogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-bntlogin: $(top_builddir)/config.status $(srcdir)/bntlogin.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-bntrancid: $(top_builddir)/config.status $(srcdir)/bntrancid.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 brancid: $(top_builddir)/config.status $(srcdir)/brancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 brlogin: $(top_builddir)/config.status $(srcdir)/brlogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+bntlogin: $(top_builddir)/config.status $(srcdir)/bntlogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+bntrancid: $(top_builddir)/config.status $(srcdir)/bntrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 cat5rancid: $(top_builddir)/config.status $(srcdir)/cat5rancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -483,6 +501,8 @@ erancid: $(top_builddir)/config.status $(srcdir)/erancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 f5login: $(top_builddir)/config.status $(srcdir)/f5login.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+f5rancid: $(top_builddir)/config.status $(srcdir)/f5rancid.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 f10rancid: $(top_builddir)/config.status $(srcdir)/f10rancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 flogin: $(top_builddir)/config.status $(srcdir)/flogin.in
@@ -490,6 +510,8 @@ flogin: $(top_builddir)/config.status $(srcdir)/flogin.in
 fnlogin: $(top_builddir)/config.status $(srcdir)/fnlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 fnrancid: $(top_builddir)/config.status $(srcdir)/fnrancid.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+gvhlogin: $(top_builddir)/config.status $(srcdir)/gvhlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 h3clogin: $(top_builddir)/config.status $(srcdir)/h3clogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -501,9 +523,9 @@ htlogin: $(top_builddir)/config.status $(srcdir)/htlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 htrancid: $(top_builddir)/config.status $(srcdir)/htrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-jlogin: $(top_builddir)/config.status $(srcdir)/jlogin.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 jerancid: $(top_builddir)/config.status $(srcdir)/jerancid.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+jlogin: $(top_builddir)/config.status $(srcdir)/jlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 llogin: $(top_builddir)/config.status $(srcdir)/llogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -511,9 +533,9 @@ mrancid: $(top_builddir)/config.status $(srcdir)/mrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mrvlogin: $(top_builddir)/config.status $(srcdir)/mrvlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-mtrancid: $(top_builddir)/config.status $(srcdir)/mtrancid.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mtlogin: $(top_builddir)/config.status $(srcdir)/mtlogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+mtrancid: $(top_builddir)/config.status $(srcdir)/mtrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 nlogin: $(top_builddir)/config.status $(srcdir)/nlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -541,15 +563,15 @@ tlogin: $(top_builddir)/config.status $(srcdir)/tlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 trancid: $(top_builddir)/config.status $(srcdir)/trancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+ulogin: $(top_builddir)/config.status $(srcdir)/ulogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+wlogin: $(top_builddir)/config.status $(srcdir)/wlogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 xilogin: $(top_builddir)/config.status $(srcdir)/xilogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 xirancid: $(top_builddir)/config.status $(srcdir)/xirancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 xlogin: $(top_builddir)/config.status $(srcdir)/xlogin.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-ulogin: $(top_builddir)/config.status $(srcdir)/ulogin.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-wlogin: $(top_builddir)/config.status $(srcdir)/wlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 zrancid: $(top_builddir)/config.status $(srcdir)/zrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@

@@ -382,10 +382,10 @@ ezt3;login;elogin
 #
 # f5 big-ip <=v10
 f5;script;f5rancid
-f5;login;clogin
+f5;login;f5login
 # f5 big-ip v11
 bigip;script;rancid -t bigip
-bigip;login;clogin
+bigip;login;f5login
 bigip;module;bigip
 bigip;inloop;bigip::inloop
 bigip;command;bigip::ShowVersion;tmsh show /sys version
@@ -528,6 +528,7 @@ meinberg;inloop;meinberg::inloop
 meinberg;command;ShowDevice;cat /device_version
 meinberg;command;ShowNTP;ntpq -p
 meinberg;command;ShowNetwork;show network
+meinberg;command;ShowConfiguration;cat /cfgdb/startup/lantime/etc/mbg/*.cfg
 #
 mikrotik;script;mtrancid
 mikrotik;login;mtlogin

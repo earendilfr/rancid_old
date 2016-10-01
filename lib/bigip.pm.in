@@ -21,6 +21,8 @@ use rancid @VERSION@;
 @ISA = qw(Exporter rancid main);
 #XXX @Exporter::EXPORT = qw($VERSION @commandtable %commands @commands);
 
+our $found_hardware;
+
 # load-time initialization
 sub import {
     # force a terminal type so as not to confuse the POS
@@ -36,6 +38,8 @@ sub init {
     ProcessHistory("COMMENTS","keysort","A1","#\n");
     ProcessHistory("COMMENTS","keysort","B0","#\n");
     ProcessHistory("COMMENTS","keysort","C0","#\n");
+
+    $found_hardware = 0;
 
     0;
 }
