@@ -26,11 +26,12 @@ set send_human {.2 .1 .4 .2 1}
 
 # Log into the router.
 # returns: 0 on success, 1 on failure, -1 if rsh was used successfully
-proc login { router user userpswd passwd enapasswd cmethod cyphertype } {
-    global spawn_id in_proc do_command do_script platform
+proc login { router user userpswd passwd enapasswd bckuser bckpwd cmethod cyphertype } {
+    global spawn_id in_proc do_command do_script platform do_backupaccount
     global prompt u_prompt p_prompt e_prompt sshcmd
     set in_proc 1
     set uprompt_seen 0
+    set password_sent 0
 
     # try each of the connection methods in $cmethod until one is successful
     set progs [llength $cmethod]
@@ -249,17 +250,34 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype } {
 					  exp_continue
 					}
 	-re "$u_prompt"		{
-				  send "$user\r"
-				  set uprompt_seen 1
+				  #send "$user\r"
+                  if {$uprompt_seen > 1 || $uprompt_seen == 1 && $do_backupaccount != 1} {
+                    send_user "\nError: Invalid user/password: $router\n"
+                    catch {close}; catch {wait}; return 1
+                  } elseif {$uprompt_seen == 1 && $do_backupaccount == 1} {
+                    send "$bckuser\r"
+                    set uprompt_seen 2
+                  } else {
+                    send "$user\r"
+				    set uprompt_seen 1
+                  }
 				  exp_continue
 				}
 	-re "$p_prompt"		{
 				  sleep 1
-				  if {$uprompt_seen == 1} {
-					send "$userpswd\r"
-				  } else {
-					send "$passwd\r"
-				  }
+                  if {$password_sent > 1 || $password_sent == 1 && $do_backupaccount != 1} {
+                    send_user "\nError: Invalid password: $router\n"
+                    catch {close}; catch {wait}; return 1
+                  } elseif {$password_sent == 1 && $uprompt_seen == 2 && $do_backupaccount == 1} {
+                    send "$bckpwd\r"
+                    set password_sent 2
+                  } elseif {$uprompt_seen == 1} {
+                    send "$userpswd\r"
+                    set password_sent 1
+                  } else {
+                    send "$passwd\r"
+                    set password_sent 1
+                  }
 				  exp_continue
 				}
 	-re "$prompt"		{ break; }
@@ -458,12 +476,12 @@ foreach router [lrange $argv $i end] {
     if { $do_passwd || $do_enapasswd } {
       set pswd [find password $router]
       if { [llength $pswd] == 0 } {
-	send_user -- "\nError: no password for $router in $password_file.\n"
-	continue
+	    send_user -- "\nError: no password for $router in $password_file.\n"
+	    continue
       }
       if { $enable && $do_enapasswd && $autoenable == 0 && [llength $pswd] < 2 } {
-	send_user -- "\nError: no enable password for $router in $password_file.\n"
-	continue
+	    send_user -- "\nError: no enable password for $router in $password_file.\n"
+	    continue
       }
       set passwd [join [lindex $pswd 0] ""]
       set enapasswd [join [lindex $pswd 1] ""]
@@ -476,6 +494,19 @@ foreach router [lrange $argv $i end] {
     } else {
       set ruser [join [find user $router] ""]
       if { "$ruser" == "" } { set ruser $default_user }
+    }
+
+    # Figure backup username (only usefull for backup member of a HA cluster)
+    set bckuser [join [find backupuser $router] ""]
+    set pbckpwd [find backuppasswd $router]
+    if { [llength $pbckpwd] > 0 } {
+        set bckpwd [join [lindex $pbckpwd 0] ""]
+    } else {
+        set bckpwd ""
+    }
+
+    if { "$bckuser" != "" && "$bckpwd" != "" } {
+        set do_backupaccount 1
     }
 
     # Figure out username's password (if different from the vty password)
@@ -533,7 +564,7 @@ foreach router [lrange $argv $i end] {
     if { "$sshcmd" == "" } { set sshcmd {ssh} }
 
     # Login to the router
-    if {[login $router $ruser $userpswd $passwd $enapasswd $cmethod $cyphertype]} {
+    if {[login $router $ruser $userpswd $passwd $enapasswd $bckuser $bckpwd $cmethod $cyphertype]} {
 	# if login failed or rsh was successful, move on to the next device
 	continue
     }
