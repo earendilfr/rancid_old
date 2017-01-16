@@ -184,7 +184,7 @@ sub ShowConfig {
 
         $linecnt++;
 
-        if (/(username (\S+) password \d) .*/ && $filter_pwds >= 1) {
+        if (/(username (\S+) password \d) .*/ && $filter_pwds >= 2) {
             ProcessHistory("USERS","","$2","#$1 <removed>\n");
             next;
         }

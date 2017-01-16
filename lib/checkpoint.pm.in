@@ -256,11 +256,11 @@ sub ShowConfig {
         $linecnt++;
 
         # We take in count line with a password
-        if (/(set expert-password-hash)\s*.*/ && $filter_pwds >= 1) {
+        if (/(set expert-password-hash)\s*.*/ && $filter_pwds >= 2) {
             ProcessHistory("CONF","","","#$1 <removed>\n");
             next;
         }
-        if (/(set user .* password-hash)\s*.*/ && $filter_pwds >= 1) {
+        if (/(set user .* password-hash)\s*.*/ && $filter_pwds >= 2) {
             ProcessHistory("CONF","","","#$1 <removed>\n");
             next;
         }

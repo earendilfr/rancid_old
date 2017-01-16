@@ -63,7 +63,7 @@ TOP: while (<$INPUT>) {
             $clean_run=0;
             last;
         }
-        while (/[\]>#]\s*($cmds_regexp)\s*$/) {
+        while (/[\]>#]\s*($cmds_regexp)/) {
             $cmd = $1;
             if (!defined($prompt)) {
                 $prompt = ($_ =~ /^([^\]>#]+[\]>]\a?)/)[0];

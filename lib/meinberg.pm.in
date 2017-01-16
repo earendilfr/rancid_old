@@ -157,7 +157,7 @@ sub ShowNetwork {
 
 sub ShowConfiguration {
     my($INPUT, $OUTPUT, $cmd) = @_;
-    print STDERR "    In ShowNetwork: $_" if ($debug);
+    print STDERR "    In ShowConfig: $_" if ($debug);
 
     my $linecnt = 0;
     while (<$INPUT>) {

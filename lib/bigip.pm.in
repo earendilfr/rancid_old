@@ -251,7 +251,7 @@ sub WriteTerm {
 
         $lines++;
 
-        if (/(bind-pw|encrypted-password|user-password-encrypted|passphrase) / && $filter_pwds >= 1) {
+        if (/(bind-pw|encrypted-password|user-password-encrypted|passphrase) / && $filter_pwds >= 2) {
             ProcessHistory("ENABLE","","","# $1 <removed>\n");
             next;
         }
