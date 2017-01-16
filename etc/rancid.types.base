@@ -124,10 +124,11 @@ cisco;script;rancid -t cisco
 cisco;login;clogin
 cisco;module;ios
 cisco;inloop;ios::inloop
-cisco;command;ios::RunCommand;copy running-config startup-config
+#cisco;command;ios::RunCommand;copy running-config startup-config
 cisco;command;ios::ShowVersion;show version
 cisco;command;ios::ShowChassis;show chassis
 cisco;command;ios::ShowRedundancy;show redundancy secondary
+cisco;command;ios::ShowIDprom;show idprom switch all
 cisco;command;ios::ShowIDprom;show idprom backplane
 cisco;command;ios::ShowInstallActive;show install active
 cisco;command;ios::ShowEnv;show env all
@@ -180,6 +181,7 @@ cisco;command;ios::ShowContCbus;show controllers cbus
 cisco;command;ios::ShowDiagbus;show diagbus
 cisco;command;ios::ShowDiag;show diag
 cisco;command;ios::ShowCapture;show capture;ASA/PIX
+cisco;command;ios::ShowModule;show module switch all;c6500 ios
 cisco;command;ios::ShowModule;show module;c6500 ios
 cisco;command;ios::ShowSpeVersion;show spe version
 cisco;command;ios::ShowC7200;show c7200
@@ -206,7 +208,7 @@ cisco-nx;login;clogin
 cisco-nx;module;nxos
 cisco-nx;inloop;nxos::inloop
 cisco-nx;command;rancid::RunCommand;term no monitor-force
-cisco-nx;command;nxos::RunCommand;copy running-config startup-config
+#cisco-nx;command;nxos::RunCommand;copy running-config startup-config
 cisco-nx;command;nxos::ShowVersion;show version
 cisco-nx;command;nxos::ShowVersionBuild;show version build-info all
 cisco-nx;command;nxos::ShowLicense;show license
@@ -247,7 +249,7 @@ cisco-xr;module;iosxr
 cisco-xr;inloop;iosxr::inloop
 cisco-xr;command;rancid::RunCommand;terminal no-timestamp;Disable timestamps XR 3.6
 cisco-xr;command;rancid::RunCommand;terminal exec prompt no-timestamp;Disable timestamps XR 3.8
-cisco-xr;command;iosxr::RunCommand;copy running-config startup-config
+#cisco-xr;command;iosxr::RunCommand;copy running-config startup-config
 cisco-xr;command;iosxr::ShowVersion;admin show version
 cisco-xr;command;iosxr::ShowInstallSummary;admin show install summary;XR image
 cisco-xr;command;iosxr::ShowLicense;admin show license udi;XR image
@@ -388,6 +390,7 @@ bigip;script;rancid -t bigip
 bigip;login;f5login
 bigip;module;bigip
 bigip;inloop;bigip::inloop
+bigip;command;bigip::ShowVersion;clsh tmsh show sys hardware
 bigip;command;bigip::ShowVersion;tmsh show /sys version
 bigip;command;bigip::ShowHardware;tmsh show /sys hardware
 bigip;command;bigip::ShowLicense;tmsh show /sys license
@@ -430,6 +433,7 @@ h3c;script;rancid -t h3c
 h3c;login;h3clogin
 h3c;module;h3c
 h3c;inloop;h3c::inloop
+#h3c;command;RunCommand;save safely force
 h3c;command;DisplayVersion;display version
 h3c;command;DisplayGeneric;dis device manuinfo
 h3c;command;DisplayGeneric;display boot-loader
