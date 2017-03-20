@@ -45,75 +45,65 @@
 
 # print a usage message to stderr
 pr_usage() {
-    echo "usage: $0 [-V] [-f group_config_file] [-r device_name] [-m mail rcpt] group" >&2;
+    echo "usage: $0 [-Vh] [-f group_config_file] [-r device_name] [-m mail rcpt] [-M \"commit message\"] group" >&2;
 }
 
-# command-line options
-# -V print version string
-# -f <group config file name>
-# -m <mail recipients>
-# -r <device name>
-alt_mailrcpt=0
-if [ $# -ge 1 ] ; then
-
-    while [ 1 ] ; do
-	case $1 in
-	-V)
-	    echo "@PACKAGE@ @VERSION@"
-	    exit 0
-	    ;;
-	-f)
-	    shift
-	    # next arg is the alternate config file name
-	    ENVFILE="$1"
-	    if [ -z $ENVFILE ]; then
-		pr_usage
-		exit 1
-	    fi
-	    shift
-	    ;;
-	-m)
-	    shift
-	    # next arg is the mail recipient
-	    alt_mailrcpt=1
-	    if [ -z "$mailrcpt" ] ; then
-		mailrcpt="$1"
-	    else
-		mailrcpt="$mailrcpt,$1"
-	    fi
-	    shift
-	    ;;
-	-r)
-	    shift
-	    # next arg is the device name
-	    device="$1"
-	    shift
-	    ;;
-	--)
-	    shift; break;
-	    ;;
-	-h)
-	    pr_usage
-	    exit 0
-	    ;;
-	-*)
-	    echo "unknown option: $1" >&2
-	    pr_usage
-	    exit 1
-	    ;;
-	*)
-	    break;
-	    ;;
-	esac
+get_params() {
+    local OPTIND=1
+    while getopts "dVhf:r:m:M:" opt; do
+        case "$opt" in
+            V)
+                echo "rancid 3.4.1"
+                exit 0
+                ;;
+            h)
+                pr_usage
+                exit 0
+                ;;
+            f)
+                # next arg is the alternate config file name
+                ENVFILE="$OPTARG"
+                if [ -z $ENVFILE ]; then
+                    pr_usage
+                    exit 1
+                fi
+                ;;
+            m)
+                # next arg is the mail recipient
+                alt_mailrcpt=1
+                if [ -z "$mailrcpt" ] ; then
+                    mailrcpt="$OPTARG"
+                else
+                    mailrcpt="$mailrcpt,$OPTARG"
+                fi
+                ;;
+            M)
+                # next arg is the commit message
+                commitmsg="$OPTARG"
+                ;;
+            r)
+                # next arg is the device name
+                device="$OPTARG"
+                ;;
+            *)
+                echo "unknown option: -$opt" >&2
+                pr_usage
+                exit 1
+                ;;
+        esac
     done
-fi
+    shift "$((OPTIND - 1))"
 
-# Must specify a group on which to run rancid
-if [ $# -lt 1 ] ; then
-    echo 'must specify group'; exit 1
-else
-    GROUP=$1
-fi
+    if [ $# -lt 1 ] ; then
+        echo 'must specify group'; exit 1
+    else
+        GROUP="$1"
+    fi
+}
+
+alt_mailrcpt=0
+get_params "$@"
+
 TMP=${TMPDIR:=/tmp}/rancid.$GROUP.$$
 if [ -z "$ENVFILE" ] ; then
     ENVFILE="@sysconfdir@/rancid.conf"
@@ -609,28 +599,31 @@ if [ $alt_mailrcpt -eq 1 ] ; then
 	courtesy=" - courtesy of $mailrcpt"
 fi
 subject="router config diffs$courtesy"
-if [ "X$device" != "X" ] ; then
-	case $RCSSYS in
-		git )
-			$RCSSYS commit -am "updates of the $(date +%F)$courtesy"
-			;;
-		svn | cvs )
-			$RCSSYS commit -m "updates of the $(date +%F)$courtesy"
-			;;
-	esac
+if [ -n "$device" ]; then
+    if [ -n "$commitmsg" ]; then
+        commitmsg="$commitmsg: updates of the $(date +%F) for device $device"
+    else
+        commitmsg="updates of the $(date +%F) for device $device"
+    fi
     subject="$GROUP/$device $subject"
 else
-	case $RCSSYS in
-		git )
-			$RCSSYS commit -am "updates of the $(date +%F)$courtesy"
-			;;
-		svn | cvs )
-			$RCSSYS commit -m "updates of the $(date +%F)$courtesy"
-			;;
-	esac
-	subject="$GROUP $subject"
+    if [ -n "$commitmsg" ]; then
+        commitmsg="$commitmsg: updates of the $(date +%F)"
+    else
+        commitmsg="updates of the $(date +%F)"
+    fi
+    subject="$GROUP $subject"
 fi
 
+case $RCSSYS in
+    git )
+        $RCSSYS commit -am "${commitmsg}${courtesy}"
+        ;;
+    svn | cvs )
+        $RCSSYS commit -m  "${commitmsg}${courtesy}"
+        ;;
+esac
+        
 # working-directory maintenance & cleanup every 100 runs
 if [ -e "runcount" ] ; then
     read RUNCOUNT < ./runcount
@@ -714,7 +707,7 @@ fi
 cd $DIR/configs
 rm -f $DIR/routers.failed
 [ -z $OLDTIME ] && OLDTIME=24
-@PERLV@ -F\; -ane "{chomp(@F);\$file = sprintf(\"\$F[4]%s\$F[0]\",length(\$F[4])?'/':'');\$t = (stat(\$file))[9]; print \`ls -ld \$file\`
+perl -F\; -ane "{chomp(@F);\$file = sprintf(\"\$F[4]%s\$F[0]\",length(\$F[4])?'/':'');\$t = (stat(\$file))[9]; print \`ls -1d \$file\`
 	if (time() - \$t >= $OLDTIME*60*60);}" $devlistfile | sort -u > $DIR/routers.failed
 if [ -s $DIR/routers.failed ] ; then
 	(

@@ -48,73 +48,63 @@
 ENVFILE="@sysconfdir@/rancid.conf"
 
 TMPDIR=${TMPDIR:=/tmp}; export TMPDIR
-LOG_BY_GRP=1
+LOG_OUT=""; export LOG_OUT
+LOG_BY_GRP=1; export LOG_BY_GRP
 
 # control_rancid argv
 CR_ARGV=""; export CR_ARGV
 
 # print a usage message to stderr
 pr_usage() {
-    echo "usage: $0 [-d] [-V] [-f config_file] [-r device_name] [-m mail rcpt] [group [group ...]]" >&2;
+    echo "usage: $0 [-Vh] [-f config_file] [-d|-l log_file] [-r device_name] [-m mail rcpt] [-M \"commit message\"] [group [group ...]]" >&2;
 }
 
-# command-line options
-# -V
-# -f <config file name>
-# -m <mailto address>
-# -r <device name>
-if [ $# -ge 1 ] ; then
-    while [ 1 ] ; do
-	case $1 in
-	-V)
-	    echo "@PACKAGE@ @VERSION@"
-	    exit 0
-	    ;;
-	-f)
-	    shift
-	    # next arg is the alternate config file name
-	    ENVFILE="$1"
-	    if [ -z $ENVFILE ]; then
-		pr_usage
-		exit 1
-	    fi
-	    CR_ARGV="$CR_ARGV -f $1"; export CR_ARGV
-	    shift
-	    ;;
-	-m)
-	    shift
-	    # next arg is the mailto name
-	    CR_ARGV="$CR_ARGV -m $1"; export CR_ARGV
-	    shift
-	    ;;
-	-r)
-	    shift
-	    # next arg is the device name
-	    CR_ARGV="$CR_ARGV -r $1"; export CR_ARGV
-	    shift
-	    ;;
-        -d)
-            shift
+OPTIND=1
+while getopts "Vhdf:r:m:M:l:" opt; do
+    case "$opt" in
+        V)
+            echo "rancid 3.4.1"
+            exit 0
+            ;;
+        h)
+            pr_usage
+            exit 0
+            ;;
+        d)
             LOG_OUT="/dev/stderr"
             ;;
-	--)
-	    shift; break;
-	    ;;
-	-h)
-	    pr_usage
-	    exit
-	    ;;
-	-*)
-	    echo "unknown option: $1" >&2
-	    pr_usage
-	    exit 1
-	    ;;
-	*)
-	    break;
-	    ;;
-	esac
-    done
-fi
+        l)
+            LOG_OUT="$OPTARG"
+            ;;
+        f)
+            # next arg is the alternate config file name
+            ENVFILE="$OPTARG"
+            if [ -z $ENVFILE ]; then
+                pr_usage
+                exit 1
+            fi
+            CR_ARGV="$CR_ARGV -f \"$ENVFILE\""; export CR_ARGV
+            ;;
+        r)
+            # next arg is the device name
+            CR_ARGV="$CR_ARGV -r \"$OPTARG\""; export CR_ARGV
+            ;;
+        m)
+            # next arg is the mailto name
+            CR_ARGV="$CR_ARGV -m \"$OPTARG\""; export CR_ARGV
+            ;;
+        M)
+            # next arg is the commit message
+            CR_ARGV="$CR_ARGV -M \"$OPTARG\""; export CR_ARGV
+            ;;
+        *)
+            echo "unknown option: -$opt" >&2
+            pr_usage
+            exit 1
+            ;;
+    esac
+done
+shift "$((OPTIND - 1))"
 
 . $ENVFILE
 
@@ -125,15 +115,15 @@ elif [ "x$LOG_OUT" == "x" -a "x$LOGFILE" != "x" ]; then
     LOG_BY_GRP=0
 fi
 
-# SENDMAIL location
-SENDMAIL=${SENDMAIL:=sendmail};
-
 if [ $# -ge 1 ] ; then
     LIST_OF_GROUPS="$*"; export LIST_OF_GROUPS
 elif [ "$LIST_OF_GROUPS" = "" ] ; then
     echo "LIST_OF_GROUPS is empty in $ENVFILE"
     exit 1
 fi
+
+# SENDMAIL location
+SENDMAIL=${SENDMAIL:=sendmail};
 
 if [ ! -d $LOGDIR ] ; then
     mkdir -m $UMASK -p $LOGDIR || (echo "Could not create log directory: $LOGDIR"; exit 1)
@@ -193,9 +183,9 @@ END
 	    trap 'rm -fr $LOCKFILE;exit 1' 1 2 3 6 10 15
 	    perl -e 'use POSIX;sysopen(FH, $ARGV[1], O_RDWR|O_CREAT|O_EXCL, 0660) or exit 1;print FH "$ARGV[0]\n";' -- $$ $LOCKFILE
 	    if [ $? -eq 0 ] ; then
-		control_rancid $CR_ARGV $GROUP
-		trap ''  1 2 3 6 10 15
-		rm -f $LOCKFILE
+		    eval control_rancid $CR_ARGV $GROUP
+		    trap ''  1 2 3 6 10 15
+		    rm -f $LOCKFILE
 	    fi
 	    trap ''  1 2 3 6 10 15
 	fi
