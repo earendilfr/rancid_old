@@ -315,7 +315,7 @@ sub ShowVersion {
     /^System image file is "([^\"]*)"$/ &&
         ProcessHistory("COMMENTS","keysort","F5","!Image: $1\n") && next;
     # 2800 at least don't have a processor line
-    if ((/(\S+(?:\sseries)?)\s+(?:\((\S+)\)\s+processor|\(revision[^)]+\)).*\s+with (\S+k) bytes/i) ||
+    if ((/(\S+(?:\sseries)?)\s+(?:\(([ \S]+)\)\s+processor|\(revision[^)]+\)).*\s+with (\S+k) bytes/i) ||
         (/isco\s+(\S+)\s+\(.+\)\s+with (\S+[kK]) bytes/)) {
         $proc = $1;
         my($cpu) = $2;
@@ -1842,6 +1842,7 @@ sub ShowModule {
 
     my(@lines);
     my($slot, $pa, $switch_id);
+    my $sub_module = 0;
 
     while (<$INPUT>) {
         tr/\015//d;
@@ -1856,6 +1857,8 @@ sub ShowModule {
             my($len) = length($1);
             s/^$1\s{$len}//;
         }
+
+        $sub_module = 1 if (/^Mod\s*Sub-Module/);
 
         # if we are in VSS
         if (/Switch Number:\s*([0-9]+)/) {
@@ -1879,7 +1882,7 @@ sub ShowModule {
             next;
         }
         # grab the sub-modules, if any
-        if (/^\s+(\d+)\s(.*)\s+(\S+)\s+(\S+)\s+(\S+)\s+\S+\s*$/) {
+        if ($sub_module && /^\s+(\d+)\s(.*)\s+(\S+)\s+(\S+)\s+(\S+)\s+\S+\s*$/) {
             my($idx);
             $pa = 0 if ($1 != $slot);
             $slot = $1;
