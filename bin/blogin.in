@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: blogin.in 3201 2015-11-05 00:48:01Z heas $
+## $Id: blogin.in 3519 2016-12-01 00:23:58Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -233,9 +233,7 @@ proc include {args} {
     if { [ regexp "^/" $args ignore ] == 0 } {
 	set args $env(HOME)/$args
     }
-    foreach file [glob $args] {
-        source_password_file $file
-    }
+    source_password_file $args
 }
 
 proc find {var router} {
@@ -323,17 +321,19 @@ proc login { router user userpswd passwd enapasswd prompt cmethod cyphertype } {
 	# This helps cleanup each expect clause.
 	expect_after {
 	    timeout {
+		global in_proc
 		send_user "\nError: TIMEOUT reached\n"
 		catch {close}; catch {wait};
-		if { $in_proc} {
+		if {$in_proc} {
 		    return 1
 		} else {
 		    continue
 		}
 	    } eof {
+		global in_proc
 		send_user "\nError: EOF received\n"
 		catch {close}; catch {wait};
-		if { $in_proc} {
+		if {$in_proc} {
 		    return 1
 		} else {
 		    continue

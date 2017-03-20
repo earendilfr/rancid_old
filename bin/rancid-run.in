@@ -1,6 +1,6 @@
 #! /bin/sh
 ##
-## $Id: rancid-run.in 3232 2016-01-21 17:46:40Z heas $
+## $Id: rancid-run.in 3448 2016-08-15 21:30:19Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) @COPYYEARS@ by Terrapin Communications, Inc.

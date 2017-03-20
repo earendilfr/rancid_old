@@ -1,6 +1,6 @@
 package ios;
 ##
-## $Id: ios.pm.in 3236 2016-01-22 07:06:23Z heas $
+## $Id: ios.pm.in 3565 2016-12-16 18:33:20Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -615,8 +615,8 @@ sub ShowCellular {
     return(1) if (/(invalid (input|command) detected|type help or )/i);
 
     # Ignore the PDP address and assigned DNS servers
-    next if (/^PDP address/);
-    next if (/^\s*(Primary|Secondary) DNS address/);
+	next if (/^pdp (ipv6 )?address/i);
+	next if (/^\s*(primary|secondary) DNS (ipv6 )?address/i);
 
     ProcessHistory("COMMENTS","keysort","CELL","!CELL: $_");
     }
@@ -661,8 +661,9 @@ sub ShowLicense {
 
     # filter the BS from license broker
     next if (/(renewal attempt|communication attempt):/i);
+	next if (/next registration attempt:/i);		# timestamp
     next if (/(period used:|requested time:)/i);        # show lic feature
-    if (/(^\s*period left:\s*)\d+/i) {
+	if (/(^\s*(evaluation )?period (left|remaining):\s*)\d+/i) {
         ProcessHistory("COMMENTS","keysort","LICENSE","! $1<limited>\n");
         next;
     }
@@ -991,18 +992,15 @@ sub ShowBoot {
     # otherwise pick up bootflash.
     print STDERR "    In ShowBoot: $_" if ($debug);
 
-    my $in_bootflash = 0;
     while (<$INPUT>) {
     tr/\015//d;
     last if (/^$prompt/);
-        return(1) if ($cmd eq "show boot system" && $type eq "3750");
     next if (/^(\s*|\s*$cmd\s*)$/);
     next if (/^\s+\^$/);
     return(1) if (/Line has invalid autocommand /);
     return(1) if (/(invalid (input|command) detected|type help or )/i);
     return(1) if (/Ambiguous command/i);
     return(1) if (/(Open device \S+ failed|Error opening \S+:)/);
-        return(0) if ($found_boot);
     return(-1) if (/command authorization failed/i);
     # the pager can not be disabled per-session on the PIX
     if (/^(<-+ More -+>)/) {
@@ -1014,7 +1012,6 @@ sub ShowBoot {
     if (!$H0) {
         $H0 = 1; ProcessHistory("COMMENTS","keysort","H0","!\n");
     }
-
         if ($type !~ /^(12[04]|7)/) {
         if ($type !~ /^(29|35)00/) {
         ProcessHistory("COMMENTS","keysort","H2","!BootFlash: $_");
@@ -1025,7 +1022,6 @@ sub ShowBoot {
         ProcessHistory("COMMENTS","keysort","H1","!Variable: $_");
     }
     }
-    $found_boot = 1;
     ProcessHistory("COMMENTS","","","!\n");
     return(0);
 }

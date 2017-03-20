@@ -1,6 +1,6 @@
 #! /bin/sh
 ##
-## $Id: control_rancid.in 3234 2016-01-22 03:21:58Z heas $
+## $Id: control_rancid.in 3518 2016-11-30 00:41:36Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) @COPYYEARS@ by Terrapin Communications, Inc.
@@ -136,7 +136,7 @@ if [ ! -d $DIR ] ; then
     exit 1
 fi
 cd $DIR
-if [ -e "rancid.conf" ] ; then
+if [ -f "rancid.conf" ] ; then
     . ./rancid.conf
 fi
 
@@ -147,7 +147,7 @@ if [ $RCSSYS != "cvs" -a $RCSSYS != "svn" -a $RCSSYS != "git" ] ; then
     exit 1
 fi
 
-# the receipient(s) of diffs & mail options
+# the recipient(s) of diffs & mail options
 mailrcpt=${mailrcpt:-"@MAILPLUS@${GROUP}${MAILDOMAIN}"}; export mailrcpt
 adminmailrcpt=${adminmailrcpt:-"@ADMINMAILPLUS@${GROUP}${MAILDOMAIN}"};
 export adminmailrcpt
@@ -165,12 +165,31 @@ if [ $MAX_ROUNDS -lt 0 ] ; then
     MAX_ROUNDS=1
 fi
 
+# Check for missing configs dir.
+if [ ! -d $DIR/configs ] ; then
+    mkdir $DIR/configs
+    if [ $? -ne 0 ] ; then
+	echo "Error: could not create missing configs directory" >&2
+	exit
+    fi
+    case $RCSSYS in
+    cvs | svn)
+	$RCSSYS add configs
+	;;
+    esac
+fi
+
 # create a .cvsignore/.gitignore
 case $RCSSYS in
 	git )
 		if [ ! -f .gitignore ] ; then
 			touch .gitignore
 			$RCSSYS add .gitignore
+        else
+            $RCSSYS ls-files .gitignore --error-unmatch > /dev/null 2>&1
+            if [ $? -ne 0 ] ; then
+                git add .gitignore
+            fi
 		fi
 		rm -rf .gitignore
 		cat > .gitignore <<EOF
@@ -183,7 +202,7 @@ case $RCSSYS in
 *.new
 *.raw
 EOF
-		if [ -e .gitignore.locale ] ; then
+		if [ -f .gitignore.locale ] ; then
 			cat .gitignore.locale >> .gitignore
 		fi
 		;;
@@ -201,7 +220,7 @@ routers.single
 routers.up
 runcount
 EOF
-		if [ -e .cvsignore.locale ] ; then
+		if [ -f .cvsignore.locale ] ; then
 			cat .cvsignore.locale >> .cvsignore
 		fi
 		if [ ! -f configs/.cvsignore ] ; then
@@ -214,7 +233,7 @@ EOF
 *.new
 *.raw
 EOF2
-		if [ -e configs/.cvsignore.locale ] ; then
+		if [ -f configs/.cvsignore.locale ] ; then
 			cat configs/.cvsignore.locale >> configs/.cvsignore
 		fi
 		if [ $RCSSYS = svn ] ; then
@@ -237,7 +256,7 @@ if [ -f rancid.conf ] ; then
 			LN=$(($RCSSYS ls rancid.conf | wc -l) 2>/dev/null)
 			;;
 		git )
-			$RCSSYS status -s rancid.conf | grep '^?'
+            $RCSSYS ls-files rancid.conf --error-unmatch > /dev/null 2>&1
 			if [ $? -eq 0 ]; then LN=1; else LN=0; fi
 			;;
     esac
@@ -625,7 +644,7 @@ case $RCSSYS in
 esac
         
 # working-directory maintenance & cleanup every 100 runs
-if [ -e "runcount" ] ; then
+if [ -f "runcount" ] ; then
     read RUNCOUNT < ./runcount
     RUNCOUNT=`expr $RUNCOUNT + 1`
 else

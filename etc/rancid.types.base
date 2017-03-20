@@ -14,8 +14,10 @@ a10;command;acos::ShowLicense;show license
 a10;command;acos::ShowBootimage;show bootimage
 a10;command;acos::ShowAdmin;show admin
 a10;command;acos::ShowVlan;show vlan
+a10;command;acos::ShowVlan;show vlans
 a10;command;acos::ShowAflex;show aflex all-partitions
 a10;command;acos::ShowRunningConfig;show running-config all-partitions
+a10;command;acos::ShowRunningConfig;show partition-config all
 #
 agm;script;agmrancid
 #
@@ -124,7 +126,6 @@ cisco;script;rancid -t cisco
 cisco;login;clogin
 cisco;module;ios
 cisco;inloop;ios::inloop
-#cisco;command;ios::RunCommand;copy running-config startup-config
 cisco;command;ios::ShowVersion;show version
 cisco;command;ios::ShowChassis;show chassis
 cisco;command;ios::ShowRedundancy;show redundancy secondary
@@ -208,7 +209,6 @@ cisco-nx;login;clogin
 cisco-nx;module;nxos
 cisco-nx;inloop;nxos::inloop
 cisco-nx;command;rancid::RunCommand;term no monitor-force
-#cisco-nx;command;nxos::RunCommand;copy running-config startup-config
 cisco-nx;command;nxos::ShowVersion;show version
 cisco-nx;command;nxos::ShowVersionBuild;show version build-info all
 cisco-nx;command;nxos::ShowLicense;show license
@@ -249,7 +249,6 @@ cisco-xr;module;iosxr
 cisco-xr;inloop;iosxr::inloop
 cisco-xr;command;rancid::RunCommand;terminal no-timestamp;Disable timestamps XR 3.6
 cisco-xr;command;rancid::RunCommand;terminal exec prompt no-timestamp;Disable timestamps XR 3.8
-#cisco-xr;command;iosxr::RunCommand;copy running-config startup-config
 cisco-xr;command;iosxr::ShowVersion;admin show version
 cisco-xr;command;iosxr::ShowInstallSummary;admin show install summary;XR image
 cisco-xr;command;iosxr::ShowLicense;admin show license udi;XR image
@@ -315,6 +314,7 @@ compass;command;eos::ShowConfig;show configuration detail
 css;script;cssrancid
 css;login;clogin
 #
+# Dell DES-3010F, DES-3052P, DES-3526, DES-3550
 dell;script;rancid -t dell
 dell;login;dllogin
 dell;module;dell
@@ -400,6 +400,7 @@ bigip;command;bigip::ShowRouteStatic;tmsh show /net route static
 bigip;command;bigip::WriteTerm;tmsh save sys config file /tmp/rancid && cat /tmp/rancid && shred -u /tmp/rancid
 bigip;command;bigip::WriteTerm;tmsh -q list recursive
 #
+# Force 10 and Dell Force10.
 force10;script;f10rancid
 force10;login;clogin
 #
@@ -449,7 +450,7 @@ hitachi;login;htlogin
 #
 # HP Procurve switch such as the 2524, 4108 or J9086A (aka. 2610) procurve 
 # switches, J9091A, and J8698A.  
-hp;script;hrancid
+hp;script;hrancid -t hp
 hp;login;hlogin
 #
 juniper;script;rancid -t juniper

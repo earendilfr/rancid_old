@@ -1,5 +1,5 @@
 .\"
-.\" $Id: rancid.conf.5.in 3218 2015-12-09 20:13:12Z heas $
+.\" $Id: rancid.conf.5.in 3448 2016-08-15 21:30:19Z heas $
 .\"
 .hys 50
 .TH "rancid.conf" "5" "15 August 2016"

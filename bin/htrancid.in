@@ -1,6 +1,6 @@
 #! @PERLV_PATH@
 ##
-## $Id: htrancid.in 3018 2015-01-11 05:51:49Z heas $
+## $Id: htrancid.in 3345 2016-04-04 00:24:36Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) @COPYYEARS@ by Terrapin Communications, Inc.
@@ -310,7 +310,20 @@ if (scalar(%commands) || !$clean_run ) {
     if (scalar(keys %commands) eq $commandcnt) {
 	printf(STDERR "$host: missed cmd(s): all commands\n");
     } elsif (scalar(%commands)) {
-	printf(STDERR "$host: missed cmd(s): %s\n", join(',', keys(%commands)))
+	my($count, $i) = 0;
+	for ($i = 0; $i < $#commands; $i++) {
+	    if ($commands{$commands[$i]}) {
+		if (!$count) {
+		    printf(STDERR "$host: missed cmd(s): %s", $commands[$i]);
+		} else {
+		    printf(STDERR ", %s", $commands[$i]);
+		}
+		$count++;
+	    }
+	}
+	if ($count) {
+	    printf(STDERR "\n");
+	}
     }
     if (!$clean_run ) {
 	print(STDERR "$host: End of run not found\n");
