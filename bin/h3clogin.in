@@ -369,7 +369,7 @@ proc run_commands { prompt command } {
 				}
 				set i [ expr $j ]
 			}
-			-re {(The contents cannot be restored!!! Delete .+\?\s?\[Y/N\]:|Copy .+ to .+\?\s?\[Y/N\]:|This command will set the boot file of the specified board. Continue\?\s?\[Y/N\]:)} {
+			-re {(The contents cannot be restored!!! Delete .+\?\s?\[Y/N\]:|Copy .+ to .+\?\s?\[Y/N\]:|This command will (set the boot|update bootrom) file o[fn] the specified board(\(s\)|)(\.|,) Continue\?\s?\[Y/N\]:)} {
 				set timeout 300
 				send -- "Y\r"
 				send_user -- "$expect_out(buffer)"
