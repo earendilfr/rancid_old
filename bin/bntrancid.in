@@ -252,8 +252,8 @@ sub WriteTerm {
         }
         if ( $filter_pwds >= 1 &&
             /^(access user (\d+ password|administrator-password|operator-password) )(\S+)/ ||
-            /^(radius-server \S+ \S+ ekey )(\S+)/
-           ) {
+            /^(radius-server \S+ \S+ ekey )(\S+)/ ||
+            /^(enable password )(\S+)/) {
             ProcessHistory("","","","! $1<removed>$'");
             next;
         }
