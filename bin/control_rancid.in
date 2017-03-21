@@ -53,7 +53,7 @@ get_params() {
     while getopts "dVhf:r:m:M:" opt; do
         case "$opt" in
             V)
-                echo "rancid 3.4.1"
+                echo "rancid @VERSION@"
                 exit 0
                 ;;
             h)

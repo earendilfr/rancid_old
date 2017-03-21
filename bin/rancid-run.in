@@ -63,7 +63,7 @@ OPTIND=1
 while getopts "Vhdf:r:m:M:l:" opt; do
     case "$opt" in
         V)
-            echo "rancid 3.4.1"
+            echo "rancid @VERSION@"
             exit 0
             ;;
         h)

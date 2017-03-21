@@ -1,6 +1,4 @@
 patch/*
-bin/*
-!bin/*.in
 include/*.h
 !include/*.h.in
 Makefile
