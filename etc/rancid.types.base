@@ -425,25 +425,25 @@ gvh;script;rancid -t gvh
 gvh;login;gvhlogin
 gvh;module;gvh
 gvh;inloop;gvh::inloop
-gvh;command;ShowVer;show version
-gvh;command;ShowChassis;show chassis
-gvh;command;ShowLicense;show license
-gvh;command;ShowConfig;show running-config
+gvh;command;gvh::ShowVer;show version
+gvh;command;gvh::ShowChassis;show chassis
+gvh;command;gvh::ShowLicense;show license
+gvh;command;gvh::ShowConfig;show running-config
 #
 h3c;script;rancid -t h3c
 h3c;login;h3clogin
 h3c;module;h3c
 h3c;inloop;h3c::inloop
 #h3c;command;RunCommand;save safely force
-h3c;command;DisplayVersion;display version
-h3c;command;DisplayGeneric;dis device manuinfo
-h3c;command;DisplayGeneric;display boot-loader
-h3c;command;DisplayGeneric;display startup
-h3c;command;DisplayGeneric;display irf
-h3c;command;DisplayVlan;display vlan all
-h3c;command;DisplayTransceiver;display transceiver interface
-h3c;command;DisplayLLDPNei;display lldp neighbor-information
-h3c;command;DisplayCurrent;display current-configuration
+h3c;command;h3c::DisplayVersion;display version
+h3c;command;h3c::DisplayGeneric;dis device manuinfo
+h3c;command;h3c::DisplayGeneric;display boot-loader
+h3c;command;h3c::DisplayGeneric;display startup
+h3c;command;h3c::DisplayGeneric;display irf
+h3c;command;h3c::DisplayVlan;display vlan all
+h3c;command;h3c::DisplayTransceiver;display transceiver interface
+h3c;command;h3c::DisplayLLDPNei;display lldp neighbor-information
+h3c;command;h3c::DisplayCurrent;display current-configuration
 #
 hitachi;script;htrancid
 hitachi;login;htlogin
@@ -530,10 +530,10 @@ meinberg;script;rancid -t meinberg
 meinberg;login;llogin
 meinberg;module;meinberg
 meinberg;inloop;meinberg::inloop
-meinberg;command;ShowDevice;cat /device_version
-meinberg;command;ShowNTP;ntpq -p
-meinberg;command;ShowNetwork;show network
-meinberg;command;ShowConfiguration;cat /cfgdb/startup/lantime/etc/mbg/*.cfg
+meinberg;command;meinberg::ShowDevice;cat /device_version
+meinberg;command;meinberg::ShowNTP;ntpq -p
+meinberg;command;meinberg::ShowNetwork;show network
+meinberg;command;meinberg::ShowConfiguration;cat /cfgdb/startup/lantime/etc/mbg/*.cfg
 #
 mikrotik;script;mtrancid
 mikrotik;login;mtlogin
