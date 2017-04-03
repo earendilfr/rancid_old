@@ -594,7 +594,7 @@ rsa;script;rancid -t rsa
 rsa;login;llogin
 rsa;module;rsa
 rsa;inloop;rsa::inloop
-rsa;command;ShowVer;sudo dmidecode -t system
+rsa;command;rsa::ShowVer;sudo dmidecode -t system
 #
 # SMC and Dell PowerConnect 35xx (3524, 3524P, 3548, 3548P) and 7048
 smc;script;srancid
