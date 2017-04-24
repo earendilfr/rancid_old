@@ -600,6 +600,14 @@ rsa;command;rsa::ShowVer;sudo dmidecode -t system
 smc;script;srancid
 smc;login;hlogin
 #
+ucopia;script;rancid -t ucopia
+ucopia;login;llogin
+ucopia;module;ucopia
+ucopia;inloop;ucopia::inloop
+ucopia;command;ucopia::ShowVersion;ucpversion summary
+ucopia;command;ucopia::ShowMaxUsers;ucp_tools max_users
+ucopia;command;ucopia::ShowConfig;ucpconfig -a get
+#
 xirrus;script;xirancid
 xirrus;login;xilogin
 #

@@ -112,19 +112,24 @@ bin/
 lib/
         acos.pm.in      rancid library for A10 Networks appliances.
 	arbor.pm.in	rancid library for Arbor Networks appliances.
+    bigip.pm.in rancid library for F5/BigIP appliances.
+    checkpoint.pm.in    rancid library for Checkpoint appliances.
 	ciscowlc.pm.in	rancid library for some Cisco Wireless Lan Controllers.
 	dell.pm.in	rancid library for some Dell D-Link models.
 	eos.pm.in	rancid library for Compass EOS.
 	exos.in		rancid library for Extreme switches.
 	foundry.pm.in	rancid library for Foundry (Brocade) switches.
+    gvh.pm.in   rancid library for Gigamon GigaVUE.
 	ios.pm.in	rancid library for Cisco IOS and IOS-XE.
 	iosxr.pm.in	rancid library for Cisco IOS-XR.
 	junos.pm.in	rancid library for Juniper JunOS.
+    meinberg.pm.in  rancid library for Meinberg appliance.
 	mrv.pm.in	rancid library for MRV MCS.
 	nxos.pm.in	rancid library for Cisco NX-OS.
 	panos.pm.in	rancid library for Palo Alto Networks devices.
 	rancid.pm.in	rancid global functions.
 	rbt.pm.in	rancid library for Riverbed Steelhead.
+    ucopia.pm.in    rancid library for UCOPIA appliances.
 man/		man pages
 share/		Readmes, samples, utilities, contribs, etc
 include/	Include files and rancid's version.h
