@@ -164,7 +164,7 @@ sub loadtype {
     print STDERR "loadtype: device type $devtype\n" if ($debug);
 
     # which device type configuration file has the definition of $devtype?
-    foreach $file ("/opt/rancid/etc/rancid.types.base","/opt/rancid/etc/rancid.types.conf") {
+    foreach $file ("@sysconfdir@/rancid.types.base","@sysconfdir@/rancid.types.conf") {
         $line = 0;
         open(INPUT, "< $file") || die "Could not open $file: $!";
         while (<INPUT>) {

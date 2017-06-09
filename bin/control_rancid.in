@@ -419,10 +419,10 @@ if [ $RALL -ne 0 -o $RDOWN -ne 0 -o $RUP -ne 0 ] ; then
 		
 		case $RCSSYS in
 			cvs | svn )
-				$RCSSYS commit -m 'Add all the routers $ROUTER_ADDED'
+				$RCSSYS commit -m "Add all the routers $ROUTER_ADDED"
 				;;
 			git )
-				$RCSSYS commit -m 'Add all the routers $ROUTER_ADDED' -a
+				$RCSSYS commit -m "Add all the routers $ROUTER_ADDED" -a
 				;;
 		esac
 	}
@@ -726,7 +726,7 @@ fi
 cd $DIR/configs
 rm -f $DIR/routers.failed
 [ -z $OLDTIME ] && OLDTIME=24
-perl -F\; -ane "{chomp(@F);\$file = sprintf(\"\$F[4]%s\$F[0]\",length(\$F[4])?'/':'');\$t = (stat(\$file))[9]; print \`ls -1d \$file\`
+@PERLV@ -F\; -ane "{chomp(@F);\$file = sprintf(\"\$F[4]%s\$F[0]\",length(\$F[4])?'/':'');\$t = (stat(\$file))[9]; print \`ls -1d \$file\`
 	if (time() - \$t >= $OLDTIME*60*60);}" $devlistfile | sort -u > $DIR/routers.failed
 if [ -s $DIR/routers.failed ] ; then
 	(
@@ -744,3 +744,4 @@ fi
 # Cleanup
 rm -f $TMP.diff $DIR/routers.single $DIR/routers.failed
 trap '' 1 2 15
+
