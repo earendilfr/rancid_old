@@ -1,6 +1,6 @@
 package ciscowlc;
 ##
-## $Id: ciscowlc.pm.in 3444 2016-08-10 16:25:47Z heas $
+## $Id: ciscowlc.pm.in 3706 2017-07-19 14:23:59Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -24,7 +24,6 @@ use rancid @VERSION@;
 
 # load-time initialization
 sub import {
-    $timeo = 90;            # wlogin timeout in seconds
     0;
 }
 
@@ -95,6 +94,7 @@ sub ShowConfig {
 
     next if (/^\s*rogue ap classify/);
     next if (/^\s*rogue (adhoc|client) alert/);
+	next if (/^\s*interface nat-address management set -?[0-9]{4,}\./);
 
     $linecnt++;
 

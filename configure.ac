@@ -13,7 +13,7 @@ AC_INIT(m4_esyscmd(configure.vers package_name),
 	[rancid@shrubbery.net])
 AC_CONFIG_SRCDIR(CHANGES)
 AM_INIT_AUTOMAKE
-COPYYEARS="1997-2016"
+COPYYEARS="1997-2017"
 AC_SUBST(COPYYEARS)
 
 
@@ -159,7 +159,20 @@ AC_ARG_WITH(svn,
 	AC_MSG_ERROR([unknown svn fs-type $withval])
   esac
 ], [AC_MSG_RESULT(no)
-    RCSSYS="cvs"
+    AC_ARG_WITH(git,
+	AS_HELP_STRING([--with-git], [use git instead of cvs]),
+    [ case "$withval" in
+      yes)
+	AC_MSG_RESULT(yes)
+	RCSSYS="git"
+	;;
+      no)
+	AC_MSG_RESULT(no)
+	RCSSYS="cvs"
+      esac
+    ], [AC_MSG_RESULT(no)
+        RCSSYS="cvs"
+    ])
 ])
 AC_SUBST(RCSSYS)
 AC_SUBST(SVN_FSTYPE)
@@ -369,6 +382,14 @@ AC_PATH_PROG(SSH,ssh,no)
 ENV_PATH="$ENV_PATH:`dirname $ac_cv_path_SSH`"
 AC_PATH_PROG(TELNET,telnet,no)
 ENV_PATH="$ENV_PATH:`dirname $ac_cv_path_TELNET`"
+# test if telnet accepts -K
+$ac_cv_path_TELNET -K < /dev/null > /dev/null 2>&1
+if test $? -eq 0 ; then
+    TELNET_CMD="telnet -K"
+else
+    TELNET_CMD="telnet"
+fi
+AC_SUBST(TELNET_CMD)
 AC_PATH_PROG(TOUCH,touch,no)
 ENV_PATH="$ENV_PATH:`dirname $ac_cv_path_TOUCH`"
 ENV_PATH="$ENV_PATH:/usr/local/bin:/usr/bin"
@@ -482,7 +503,7 @@ AC_CONFIG_FILES(bin/avologin bin/avorancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/blogin bin/brancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/brlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/cat5rancid bin/clogin, [chmod a+x $ac_file])
-AC_CONFIG_FILES(bin/complogin, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/csblogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/cssrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/dllogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/elogin bin/erancid, [chmod a+x $ac_file])
@@ -496,6 +517,7 @@ AC_CONFIG_FILES(bin/jlogin bin/jerancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/mrancid bin/mrvlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/mtrancid bin/mtlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/nlogin bin/nrancid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/noklogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/nslogin bin/nsrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/panlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/prancid, [chmod a+x $ac_file])

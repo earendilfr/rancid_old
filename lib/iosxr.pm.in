@@ -1,6 +1,6 @@
 package iosxr;
 ##
-## $Id: iosxr.pm.in 3463 2016-09-12 23:04:42Z heas $
+## $Id: iosxr.pm.in 3726 2017-08-17 15:38:28Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -22,11 +22,11 @@ our $proc;
 our $found_env;
 our $found_diag;
 our $found_version;
-our $config_register;            # configuration register value
+our $config_register;			# configuration register value
 
-our $type;                # device model, from ShowVersion
+our $type;				# device model, from ShowVersion
 
-our $C0;                # output formatting control
+our $C0;				# output formatting control
 our $E0;
 our $H0;
 our $I0;
@@ -45,7 +45,7 @@ sub init {
     $found_env = 0;
     $found_diag = 0;
     $found_version = 0;
-    $config_register = undef;        # configuration register value
+    $config_register = undef;		# configuration register value
 
     # XXX $type = undef;        # device model, from ShowVersion
 
@@ -445,6 +445,8 @@ sub ShowInstallActive {
     return(1) if (/(Invalid (input|command) detected|Type help or )/i);
     return(1) if (/^(-+\^|syntax error: unknown argument)$/i);    # NCS
     return(-1) if (/command authorization failed/i);
+	return(-1) if (/install director is not up or ready/i);# temp error
+	return(-1) if (/failed to output install information /i);# temp error
 
 	# FPD upgrade in progress on some hardware, reload/configuration change
 	# on those is not recommended as it might cause HW programming failure
@@ -742,6 +744,7 @@ sub ShowInstallSummary {
     return(-1) if (/command authorization failed/i);
     return(-1) if (/inventory summary cannot be output/i);    # temp error
     return(-1) if (/currently affected by install operation/i);# temp error
+	return(-1) if (/install director is not up or ready/i);# temp error
 
     # skip blank lines
     next if (/^\s*$/);

@@ -1,6 +1,6 @@
 package rancid;
 ##
-## $Id: rancid.pm.in 3520 2016-12-01 00:26:24Z heas $
+## $Id: rancid.pm.in 3699 2017-07-18 13:40:55Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -114,6 +114,8 @@ sub rancidinit {
     # determine oscillating data filtering mode
     if (defined($ENV{"FILTER_OSC"}) && $ENV{"FILTER_OSC"} =~ /no/i) {
     $filter_osc = 0;
+    } elsif (defined($ENV{"FILTER_OSC"}) && $ENV{"FILTER_OSC"} =~ /all/i) {
+	$filter_osc = 2;
     } else {
     $filter_osc = 1;
     }
@@ -191,6 +193,8 @@ sub loadtype {
                 $inloop = $value;
             } elsif ($directive eq "command") {
                 push(@commandtable, {$value2, $value});
+	    } elsif ($directive eq "timeout") {
+		$timeo = $value;
             } else {
                 print STDERR "loadtype: unknown directive ".
                     "$directive at $file:$line\n";

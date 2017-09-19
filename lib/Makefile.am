@@ -7,10 +7,10 @@
 AUTOMAKE_OPTIONS=foreign no-dependencies
 
 my_pkglibdir = $(pkglibdir)
-my_pkglib_DATA = rancid.pm acos.pm aeos.pm arbor.pm ciscowlc.pm \
-		 dell.pm edgemax.pm edgerouter.pm eos.pm exos.pm foundry.pm \
-                 h3c.pm ios.pm iosxr.pm junos.pm mrv.pm nxos.pm panos.pm rbt.pm \
-		 wavesvros.pm
+my_pkglib_DATA = rancid.pm acos.pm aeos.pm arbor.pm checkpoint.pm ciscowlc.pm \
+		 dell.pm edgemax.pm edgerouter.pm exos.pm foundry.pm gvh.pm h3c.pm \
+         ios.pm iossb.pm iosshtech.pm iosxr.pm junos.pm mrv.pm meinberg.pm nxos.pm \
+		 panos.pm rbt.pm rsa.pm sros.pm wavesvros.pm
 pkglib_in = $(my_pkglib_DATA:%=%.in)
 
 RANLIB= :
@@ -57,7 +57,6 @@ $(pkglib_in:%.in=%): Makefile $(top_builddir)/config.status
 acos.pm: acos.pm.in
 aeos.pm: aeos.pm.in
 arbor.pm: arbor.pm.in
-arbor.pm: arbor.pm.in
 bigip.pm: bigip.pm.in
 checkpoint.pm: checkpoint.pm.in
 ciscowlc.pm: ciscowlc.pm.in
@@ -79,4 +78,5 @@ nxos.pm: nxos.pm.in
 panos.pm: panos.pm.in
 rsa.pm: rsa.pm.in
 rbt.pm: rbt.pm.in
+sros.pm: sros.pm.in
 wavesvros.pm: wavesvros.pm.in

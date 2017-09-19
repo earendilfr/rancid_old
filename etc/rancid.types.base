@@ -94,6 +94,7 @@ brocade;login;brlogin
 # Ciena Waveserver (XXX WiP)
 ciena-ws;script;rancid -t ciena-ws
 ciena-ws;login;hlogin
+ciena-ws;timeout;120
 ciena-ws;module;wavesvros
 ciena-ws;inloop;wavesvros::inloop
 ciena-ws;command;wavesvros::ShowVersion;software show
@@ -243,6 +244,16 @@ cisco-nx;command;nxos::ShowFex;show module fex
 cisco-nx;command;nxos::ShowFex;show fex
 cisco-nx;command;nxos::WriteTerm;show running-config
 #
+# Cisco small business devices.  These are peculiar; most likely this will not
+# work with all of them.
+cisco-sb;script;rancid -t cisco-sb
+cisco-sb;login;csblogin
+cisco-sb;module;iossb
+cisco-sb;inloop;iossb::inloop
+cisco-sb;command;iossb::ShowVersion;show version
+cisco-sb;command;iossb::ShowSystem;show system
+cisco-sb;command;iossb::WriteTerm;show running-config
+#
 cisco-xr;script;rancid -t cisco-xr
 cisco-xr;login;clogin
 cisco-xr;module;iosxr
@@ -298,25 +309,24 @@ cisco-wlc5;command;ciscowlc::ShowUdi;show udi
 cisco-wlc5;command;ciscowlc::ShowSysinfo;show sysinfo
 cisco-wlc5;command;ciscowlc::ShowConfig;show run-config commands
 #
-compass;script;rancid -t compass
-compass;login;complogin
-compass;module;eos
-compass;inloop;eos::inloop
-compass;command;eos::ShowVersion;show version
-compass;command;eos::ShowAlerts;show system alerts
-compass;command;eos::ShowVersion;show system build-parameters
-compass;command;eos::ShowSoftware;show system software images
-compass;command;eos::ShowSoftware;show system software packages
-compass;command;eos::ShowModule;show system module 
-compass;command;eos::ShowInventory;show system hardware
-compass;command;eos::ShowConfig;show configuration detail 
+cisco-wlc8;script;rancid -t cisco-wlc8
+cisco-wlc8;login;wlogin
+cisco-wlc8;timeout;120
+cisco-wlc8;module;ciscowlc
+cisco-wlc8;inloop;ciscowlc::inloop
+cisco-wlc8;command;ciscowlc::ShowUdi;show udi
+cisco-wlc8;command;ciscowlc::ShowSysinfo;show sysinfo
+cisco-wlc8;command;ciscowlc::ShowConfig;show run-config commands
 #
 css;script;cssrancid
 css;login;clogin
 #
 # Dell DES-3010F, DES-3052P, DES-3526, DES-3550
+# Some of these devices are remarkably slow to read config, so the timeout is
+# rather long.
 dell;script;rancid -t dell
 dell;login;dllogin
+dell;timeout;300
 dell;module;dell
 dell;inloop;dell::inloop
 dell;command;dell::GetSystem;show switch
@@ -455,6 +465,7 @@ hp;login;hlogin
 #
 juniper;script;rancid -t juniper
 juniper;login;jlogin
+juniper;timeout;120
 juniper;module;junos
 juniper;inloop;junos::inloop
 juniper;command;junos::ShowChassisClocks;show chassis clocks
@@ -597,6 +608,7 @@ rsa;inloop;rsa::inloop
 rsa;command;rsa::ShowVer;sudo dmidecode -t system
 #
 # SMC and Dell PowerConnect 35xx (3524, 3524P, 3548, 3548P) and 7048
+# N4064, M6348, 64xx (6428), 7048, M8024(-k), and R1-2401.
 smc;script;srancid
 smc;login;hlogin
 #
@@ -607,6 +619,25 @@ ucopia;inloop;ucopia::inloop
 ucopia;command;ucopia::ShowVersion;ucpversion summary
 ucopia;command;ucopia::ShowMaxUsers;ucp_tools max_users
 ucopia;command;ucopia::ShowConfig;ucpconfig -a get
+# Nokia (Alcatel-Lucent) SR OS (TiMOS)
+# 7705 SAR, 7210 SAS, 7750 SR and 7950 XRS routers
+sros;script;rancid -t sros
+sros;login;noklogin
+sros;module;sros
+sros;inloop;sros::inloop
+sros;command;sros::ShowSystemInfo;show system information
+sros;command;sros::BootLog;file type bootlog.txt
+sros;command;sros::ShowRedundancy;show redundancy synchronization
+sros;command;sros::ShowChassis;show chassis
+sros;command;sros::ShowChassisEnv;show chassis environment
+sros;command;sros::ShowChassisPS;show chassis power-supply
+sros;command;sros::ShowChassisPM;show chassis power-management
+sros;command;sros::ShowCardState;show card state
+sros;command;sros::ShowCardDetail;show card detail
+sros;command;sros::ShowDebug;show debug
+sros;command;sros::ShowBOF;show bof
+sros;command;sros::WriteTermIndex;admin display-config index
+sros;command;sros::WriteTerm;admin display-config
 #
 xirrus;script;xirancid
 xirrus;login;xilogin

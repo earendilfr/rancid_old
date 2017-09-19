@@ -1,9 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 ## A Makefile.in is supplied, in case you do not have automake.
 
-## $Id: Makefile.am 3265 2016-02-15 15:14:04Z heas $
+## $Id: Makefile.am 3672 2017-06-21 00:48:54Z heas $
 ##
-## Copyright (c) 1997-2015 by Terrapin Communications, Inc.
+## Copyright (c) 1997-2017 by Henry Kilmer and John Heasley
 ## All rights reserved.
 ##
 ## Please see the file COPYING for the text of the license.
@@ -13,16 +13,17 @@ AUTOMAKE_OPTIONS=foreign
 
 bin_PROGRAMS = hpuifilter par
 bin_SCRIPTS = a10login alogin agmrancid anlogin arancid \
-	avologin avorancid blogin brancid brlogin cat5rancid clogin complogin \
-	control_rancid cssrancid dllogin elogin erancid f5rancid f10rancid \
+	avologin avorancid blogin brancid brlogin cat5rancid clogin \
+	control_rancid csblogin cssrancid \
+	dllogin elogin erancid f5rancid f10rancid \
 	flogin fnlogin fnrancid hlogin hrancid htlogin \
 	htrancid jerancid jlogin mrancid mrvlogin mtlogin mtrancid \
-	nlogin nrancid nslogin nsrancid panlogin plogin \
+	nlogin noklogin nrancid nslogin nsrancid panlogin plogin \
 	rancid rblogin rivlogin \
 	rivrancid rrancid rtftpcopy srancid tlogin trancid ulogin wlogin \
 	xilogin xirancid xlogin zrancid
 # XXX hack for the rancid to get pkglibdir, see corresponding XXX below
-bin_in = plogin.in rancid.in srancid.in
+bin_in = hrancid.in plogin.in rancid.in srancid.in
 
 bin_SCRIPTS += lg.cgi lgform.cgi rancid-cvs rancid-fe rancid-run
 EXTRA_DIST= lg.cgi.in lgform.cgi.in rancid-cvs.in rancid-fe.in rancid-run.in \
@@ -80,16 +81,19 @@ auto_edit = sed \
 
 # XXX this is the generic version for the rest of bin_scripts that comes from
 #     configure.in now.  perhaps change to use this.
-#$(bin_SCRIPTS): Makefile $(top_builddir)/config.status
-$(bin_in:%.in=%): Makefile $(top_builddir)/config.status
+$(bin_in:%.in=%): Makefile $(top_builddir)/config.status ../COPYING
 	rm -f $@ $@.tmp; \
 	$(auto_edit) $(srcdir)/$@.in >$@.tmp; \
 	chmod +x $@.tmp; \
 	mv $@.tmp $@
 # XXX there must be a better way to produce these dependencies, perhaps in
-#     configure.
-plogin: $(srcdir)/plogin.in ../COPYING
+#     configure, but more likely need a depend target.
+alogin: $(srcdir)/alogin.in
+hlogin: $(srcdir)/hlogin.in
+hrancid: $(srcdir)/hrancid.in
+plogin: $(srcdir)/plogin.in
 rancid: $(srcdir)/rancid.in
+srancid: $(srcdir)/srancid.in
 
 lg.cgi: Makefile $(srcdir)/lg.cgi.in
 	rm -f lg.cgi lg.cgi.tmp; \
