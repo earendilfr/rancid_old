@@ -72,9 +72,6 @@ avocent;login;avologin
 baynet;script;brancid
 baynet;login;blogin
 #
-bnt;script;bntrancid
-bnt;login;bntlogin
-#
 # Brocade
 #XXX brocade;script;rancid -t brocade
 brocade;login;brlogin
@@ -105,39 +102,19 @@ ciena-ws;command;wavesvros::WriteTerm;configuration show
 cat5;script;cat5rancid
 cat5;login;clogin
 #
-# Checkpoint firewall (61K, Gaia and SPLAT)
-checkpoint;script;rancid -t checkpoint
-checkpoint;login;llogin
-checkpoint;module;checkpoint
-checkpoint;inloop;checkpoint::inloop
-checkpoint;command;checkpoint::ShowVer;fw ver
-checkpoint;command;checkpoint::ShowVer;ver
-checkpoint;command;checkpoint::SystemInfo61K;asg_serial_info
-checkpoint;command;checkpoint::SystemInfo61K;asg_sgm_serial
-checkpoint;command;checkpoint::SystemInfo;clish -c 'show asset all'
-checkpoint;command;checkpoint::SystemInfo;system_info System Information
-checkpoint;command;checkpoint::SystemInfo;dmidecode
-checkpoint;command;checkpoint::ShowLic;cplic print
-checkpoint;command;checkpoint::ShowConfig;asg_config show
-checkpoint;command;checkpoint::ShowConfig;show configuration
-checkpoint;command;checkpoint::ShowConfig;clish -c 'show configuration'
-#
 # Cisco IOS device & Allied Telesis AW+
 cisco;script;rancid -t cisco
 cisco;login;clogin
 cisco;module;ios
 cisco;inloop;ios::inloop
 cisco;command;ios::ShowVersion;show version
-cisco;command;ios::ShowChassis;show chassis
 cisco;command;ios::ShowRedundancy;show redundancy secondary
-cisco;command;ios::ShowIDprom;show idprom switch all
 cisco;command;ios::ShowIDprom;show idprom backplane
 cisco;command;ios::ShowInstallActive;show install active
 cisco;command;ios::ShowEnv;show env all
 cisco;command;ios::ShowRSP;show rsp chassis-info
 cisco;command;ios::ShowGSR;show gsr chassis
 cisco;command;ios::ShowGSR;show diag chassis-info
-cisco;command;ios::ShowBoot;show boot system
 cisco;command;ios::ShowBoot;show boot
 cisco;command;ios::ShowBoot;show bootvar
 cisco;command;ios::ShowBoot;show variables boot
@@ -183,23 +160,20 @@ cisco;command;ios::ShowContCbus;show controllers cbus
 cisco;command;ios::ShowDiagbus;show diagbus
 cisco;command;ios::ShowDiag;show diag
 cisco;command;ios::ShowCapture;show capture;ASA/PIX
-cisco;command;ios::ShowModule;show module switch all;c6500 ios
 cisco;command;ios::ShowModule;show module;c6500 ios
 cisco;command;ios::ShowSpeVersion;show spe version
 cisco;command;ios::ShowC7200;show c7200
 cisco;command;ios::ShowCellular;show cellular 0 profile;Cellular modem
 cisco;command;ios::ShowInventory;show inventory raw
-cisco;command;ios::ShowNP3AclCount;show np 3 acl count
+cisco;command;ios::ShowInventory;show inventory;ASA/PIX
 cisco;command;ios::ShowVTP;show vtp status
 cisco;command;ios::ShowVLAN;show vlan
 cisco;command;ios::ShowVLAN;show vlan-switch
-cisco;command;ios::ShowCdp;show cdp entry *
 cisco;command;ios::ShowDetail;show switch detail
 cisco;command;ios::ShowSDM;show sdm prefer
 cisco;command;ios::ShowMTU;show system mtu
 cisco;command;ios::ShowDebug;show debug
 cisco;command;ios::ShowShun;show shun;ASA/PIX
-cisco;command;ios::ShowFtGroup;show ft group brief
 cisco;command;ios::WriteTerm;more system:running-config;ASA/PIX
 cisco;command;ios::WriteTerm;show running-config view full;workaround for role-based CLI
 cisco;command;ios::WriteTerm;show running-config
@@ -236,7 +210,6 @@ cisco-nx;command;nxos::ShowModule;show module xbar
 cisco-nx;command;nxos::ShowInventory;show inventory
 cisco-nx;command;nxos::ShowVTP;show vtp status;drop?
 cisco-nx;command;nxos::ShowVLAN;show vlan
-cisco-nx;command;nxos::ShowCdp;show cdp entry all
 cisco-nx;command;nxos::ShowDebug;show debug
 cisco-nx;command;nxos::ShowCores;show cores vdc-all
 cisco-nx;command;nxos::ShowProcLog;show processes log vdc-all
@@ -394,21 +367,19 @@ ezt3;login;elogin
 #
 # f5 big-ip <=v10
 f5;script;f5rancid
-f5;login;f5login
+f5;login;clogin
 # f5 big-ip v11
 bigip;script;rancid -t bigip
-bigip;login;f5login
+bigip;login;clogin
 bigip;module;bigip
 bigip;inloop;bigip::inloop
-bigip;command;bigip::ShowVersion;clsh tmsh show sys hardware
 bigip;command;bigip::ShowVersion;tmsh show /sys version
 bigip;command;bigip::ShowHardware;tmsh show /sys hardware
 bigip;command;bigip::ShowLicense;tmsh show /sys license
 bigip;command;bigip::ShowZebOSconf;cat /config/ZebOS.conf
 bigip;command;bigip::ShowZebOSsockets;lsof -i :179
 bigip;command;bigip::ShowRouteStatic;tmsh show /net route static
-bigip;command;bigip::WriteTerm;tmsh save sys config file /tmp/rancid && cat /tmp/rancid && shred -u /tmp/rancid
-bigip;command;bigip::WriteTerm;tmsh -q list recursive
+bigip;command;bigip::WriteTerm;tmsh -q list
 #
 # Force 10 and Dell Force10.
 force10;script;f10rancid
@@ -430,30 +401,6 @@ foundry;command;foundry::ShowMedia;show media validation
 foundry;command;foundry::ShowFlash;show flash
 foundry;command;foundry::WriteTerm;write term
 foundry;command;foundry::WriteTerm;show running-config
-#
-gvh;script;rancid -t gvh
-gvh;login;gvhlogin
-gvh;module;gvh
-gvh;inloop;gvh::inloop
-gvh;command;gvh::ShowVer;show version
-gvh;command;gvh::ShowChassis;show chassis
-gvh;command;gvh::ShowLicense;show license
-gvh;command;gvh::ShowConfig;show running-config
-#
-h3c;script;rancid -t h3c
-h3c;login;h3clogin
-h3c;module;h3c
-h3c;inloop;h3c::inloop
-#h3c;command;RunCommand;save safely force
-h3c;command;h3c::DisplayVersion;display version
-h3c;command;h3c::DisplayGeneric;dis device manuinfo
-h3c;command;h3c::DisplayGeneric;display boot-loader
-h3c;command;h3c::DisplayGeneric;display startup
-h3c;command;h3c::DisplayGeneric;display irf
-h3c;command;h3c::DisplayVlan;display vlan all
-h3c;command;h3c::DisplayTransceiver;display transceiver interface
-h3c;command;h3c::DisplayLLDPNei;display lldp neighbor-information
-h3c;command;h3c::DisplayCurrent;display current-configuration
 #
 hitachi;script;htrancid
 hitachi;login;htlogin
@@ -537,15 +484,6 @@ juniper-srx;command;junos::ShowConfiguration;show configuration switch-options
 juniper-srx;command;junos::ShowConfiguration;show configuration system
 juniper-srx;command;junos::ShowConfiguration;show configuration vlans
 #
-meinberg;script;rancid -t meinberg
-meinberg;login;llogin
-meinberg;module;meinberg
-meinberg;inloop;meinberg::inloop
-meinberg;command;meinberg::ShowDevice;cat /device_version
-meinberg;command;meinberg::ShowNTP;ntpq -p
-meinberg;command;meinberg::ShowNetwork;show network
-meinberg;command;meinberg::ShowConfiguration;cat /cfgdb/startup/lantime/etc/mbg/*.cfg
-#
 mikrotik;script;mtrancid
 mikrotik;login;mtlogin
 #
@@ -601,24 +539,11 @@ riverbed;command;rbt::WriteTerm;show configuration
 riverstone;script;rivrancid
 riverstone;login;rivlogin
 #
-rsa;script;rancid -t rsa
-rsa;login;llogin
-rsa;module;rsa
-rsa;inloop;rsa::inloop
-rsa;command;rsa::ShowVer;sudo dmidecode -t system
-#
-# SMC and Dell PowerConnect 35xx (3524, 3524P, 3548, 3548P) and 7048
+# SMC and Dell PowerConnect N2048, 35xx (3524, 3524P, 3548, 3548P), N4032F,
 # N4064, M6348, 64xx (6428), 7048, M8024(-k), and R1-2401.
 smc;script;srancid
 smc;login;hlogin
 #
-ucopia;script;rancid -t ucopia
-ucopia;login;llogin
-ucopia;module;ucopia
-ucopia;inloop;ucopia::inloop
-ucopia;command;ucopia::ShowVersion;ucpversion summary
-ucopia;command;ucopia::ShowMaxUsers;ucp_tools max_users
-ucopia;command;ucopia::ShowConfig;ucpconfig -a get
 # Nokia (Alcatel-Lucent) SR OS (TiMOS)
 # 7705 SAR, 7210 SAS, 7750 SR and 7950 XRS routers
 sros;script;rancid -t sros
