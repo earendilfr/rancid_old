@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 ##
 ## $Id: rancid-run.in 3577 2016-12-27 20:23:23Z hank $
 ##
@@ -78,7 +78,7 @@ while getopts "Vhdf:r:m:M:l:" opt; do
             exit 0
             ;;
         d)
-            LOG_OUT="/dev/stderr"
+            LOG_OUT="2"
             ;;
         l)
             LOG_OUT="$OPTARG"
@@ -199,5 +199,5 @@ END
 
 	echo
 	echo ending: `date`
-    ) > $LOG_OUT 2>&1
+    ) >&$LOG_OUT 2>&1
 done

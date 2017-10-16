@@ -20,7 +20,7 @@ set send_human {.2 .1 .4 .2 1}
 
 # Log into the router.
 # returns: 0 on success, 1 on failure, -1 if rsh was used successfully
-proc login { router user userpswd passwd enapasswd bckuser bckpwd cmethod cyphertype } {
+proc login { router user userpswd passwd bckuser bckpwd cmethod cyphertype } {
     global spawn_id in_proc do_command do_script do_backupaccount
     global prompt u_prompt p_prompt e_prompt sshcmd telnetcmd
     set in_proc 1
@@ -511,7 +511,7 @@ foreach router [lrange $argv $i end] {
     if { $do_cloginrcdbg > 0 } { continue; }
 
     # Login to the router
-    if {[login $router $ruser $userpswd $passwd $enapasswd $bckuser $bckpwd $cmethod $cyphertype]} {
+    if {[login $router $ruser $userpswd $passwd $bckuser $bckpwd $cmethod $cyphertype]} {
         incr exitval
 	    # if login failed or rsh was successful, move on to the next device
 	    continue
