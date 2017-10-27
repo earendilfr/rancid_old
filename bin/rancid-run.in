@@ -63,11 +63,11 @@ CR_ARGV=""; export CR_ARGV
 
 # print a usage message to stderr
 pr_usage() {
-    echo "usage: $0 [-Vh] [-f config_file] [-d|-l log_file] [-r device_name] [-m mail rcpt] [-M \"commit message\"] [group [group ...]]" >&2;
+    echo "usage: $0 [-Vh] [-f config_file] [-d|-l log_file] [-r device_name] [-m mail rcpt] [-c \"commit message\"] [group [group ...]]" >&2;
 }
 
 OPTIND=1
-while getopts "Vhdf:r:m:M:l:" opt; do
+while getopts "Vhdf:r:m:c:l:" opt; do
     case "$opt" in
         V)
             echo "rancid @VERSION@"
@@ -100,9 +100,9 @@ while getopts "Vhdf:r:m:M:l:" opt; do
             # next arg is the mailto name
             CR_ARGV="$CR_ARGV -m \"$OPTARG\""; export CR_ARGV
             ;;
-        M)
+        c)
             # next arg is the commit message
-            CR_ARGV="$CR_ARGV -M \"$OPTARG\""; export CR_ARGV
+            CR_ARGV="$CR_ARGV -c \"$OPTARG\""; export CR_ARGV
             ;;
         *)
             echo "unknown option: -$opt" >&2
