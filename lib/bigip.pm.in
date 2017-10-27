@@ -244,6 +244,7 @@ sub WriteTerm {
         if (/^$prompt/) { $found_end++; last; } # end of config - hopefully.  f5 does not have a reliable end-of-config tag
         next if (/^(\s*|\s*$cmd\s*)$/);
         return(-1) if (/command authorization failed/i);
+        return(1) if (/^Data Input Error:/);
         return(1) if /(Invalid input detected|Type help or )/;
 
         # Ignore monitor down state, save the config as up.
