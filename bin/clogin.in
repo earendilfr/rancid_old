@@ -54,11 +54,11 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
         incr progs -1
         if [string match "telnet*" $prog] {
             regexp {telnet(:([^[:space:]]+))*} $prog methcmd suffix port
-            if {"$port" == ""} {
-                set retval [catch {eval spawn [split "$telnetcmd $router"]} reason]
-            } else {
-                set retval [catch {eval spawn [split "$telnetcmd $router $port"]} reason]
+            set cmd "$telnetcmd $router"
+            if {"$port" != ""} {
+                append cmd " $port"
             }
+            set retval [catch {eval spawn [split "$cmd"]} reason]
             if { $retval } {
                 send_user "\nError: telnet failed: $reason\n"
                 return 1
@@ -104,7 +104,7 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
                 }
                 continue;
             }
-    
+
             # handle escaped ;s in commands, and ;; and ^;
             regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
             regsub {^;} $esccommand "\u002;" command
@@ -122,7 +122,7 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
                     log_user 1; return 1
                 }
                 send_user "$router# [lindex $commands $i]\n"
-    
+
                 # rcmd does not get a pager and no prompts, so we just have to
                 # look for failures & lines.
                 expect {
@@ -275,15 +275,15 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
             -nocase -re "^warning: remote host denied authentication agent forwarding." {
                 exp_continue;
             }
-            -re "(denied|Sorry)"    {
+            -re "(denied|Sorry)" {
                 send_user "\nError: Check your passwd for $router\n"
                 catch {close}; catch {wait}; return 1
             }
-            "Login failed"      {
+            "Login failed" {
                 send_user "\nError: Check your passwd for $router\n"
                 catch {close}; catch {wait}; return 1
             }
-            -re "% (Bad passwords|Authentication failed)"   {
+            -re "% (Bad passwords|Authentication failed)" {
                 send_user "\nError: Check your passwd for $router\n"
                 catch {close}; catch {wait}; return 1
             }
@@ -298,13 +298,13 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
                 send "K\r"
                 exp_continue
             }
-            -re "Last login:"   { 
-                exp_continue 
+            -re "Last login:"   {
+                exp_continue
             }
-            -re "Press the <tab> key \[^\r\n]+\[\r\n]+" { 
-                exp_continue 
+            -re "Press the <tab> key \[^\r\n]+\[\r\n]+" {
+                exp_continue
             }
-            -re "@\[^\r\n]+ $p_prompt"  {
+            -re "@\[^\r\n]+ $p_prompt" {
                 # ssh pwd prompt
                 sleep 1
                 send -- "$userpswd\r"
@@ -316,12 +316,12 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
                 send -- "$passphrase\r"
                 exp_continue
             }
-            -re "$u_prompt"     {
+            -re "$u_prompt" {
                 send -- "$user\r"
                 set uprompt_seen 1
                 exp_continue
             }
-            -re "$p_prompt"     {
+            -re "$p_prompt" {
                 sleep 1
                 if {$password_sent == 1} {
                     send_user "\nError: Invalid password: $router\n"
@@ -335,11 +335,11 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
                 set password_sent 1
                 exp_continue
             }
-            -re "$prompt"       {
+            -re "$prompt" {
                 set prompt_match $expect_out(0,string);
                 break;
             }
-            "Login invalid"     {
+            "Login invalid" {
                 send_user "\nError: Invalid login: $router\n";
                 catch {close}; catch {wait}; return 1
             }
@@ -435,7 +435,7 @@ proc run_commands { prompt command } {
     regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
     regsub {^;} $esccommand "\u002;" command
     set sep "\\1\u001"
-    regsub -all {([^\\]);} $command "$sep" esccommand
+    regsub -all {([^\\])\;} $command "$sep" esccommand
     set sep "\u001"
     set commands [split $esccommand $sep]
     set num_commands [llength $commands]
@@ -461,22 +461,43 @@ proc run_commands { prompt command } {
                 } else {
                     set reprompt $prompt
                 }
+            } elseif {[regexp {^(copy)} $l_cmd]} {
+                set timeout 7200
+                expect {
+                    -re {(Destination filename|Source filename|Address or name of remote host) \[[^\r\n]+\]\?} { # specific match for copy running startup
+                        send_user -- "$expect_out(buffer)"
+                        send "\r"
+                        exp_continue
+                    }
+                    -re "^\[^\n\r *]*$reprompt" {
+                        set timeout $timeoutdflt
+                        send_user -- "$expect_out(buffer)"
+                    }
+                    -re "\[^\r\n]*\[\n\r]+" {
+                        send_user -- "$expect_out(buffer)"
+                        exp_continue
+                    }
+                    -re "!" {
+                        send_user -- "$expect_out(buffer)"
+                        exp_continue
+                    }
+                }
             } else {
                 expect {
                     -re "^Enter TEXT message\.  End with the character '(.)'\.?\[\n\r]+" {
-                    set endchar $expect_out(1,string)
+                        set endchar $expect_out(1,string)
                         send_user -- "$expect_out(buffer)"
                         for {set j [ expr $i + 1 ]} {$j < $num_commands} {incr j} {
-                        send -- "[subst -nocommands [lindex $commands $j]]\r"
+                            send -- "[subst -nocommands [lindex $commands $j]]\r"
                             expect {
                                 -re "^\[^\n\r *]*$reprompt" { send_user -- "$expect_out(buffer)"; break }
                                 -re "^.*\r\n" { send_user -- "$expect_out(buffer)" }
                             }
-                    }
+                        }
                         set i [ expr $j ]
                     }
                     -re "^Clear \"show interface\" counters on all interfaces \\\[confirm\\\]" {
-                    send_user -- "$expect_out(buffer)"
+                        send_user -- "$expect_out(buffer)"
                         send "y"
                         exp_continue
                     }
@@ -489,7 +510,7 @@ proc run_commands { prompt command } {
                         send_user -- "$expect_out(buffer)"
                         exp_continue
                     }
-                    -re {(Destination|Source) filename \[[^\r\n]+\]\?} { # specific match for copy running startup
+                    -re {(Destination filename|Source filename|Address or name of remote host) \[[^\r\n]+\]\?} { # specific match for copy running startup
                         send_user -- "$expect_out(buffer)" 
                         send "\r"
                         exp_continue
@@ -498,7 +519,7 @@ proc run_commands { prompt command } {
                         # NCS cleanup or backup are "very" long command without any return at screen... 
                         # We change the time out to extend it to 2 hours
                         set timeout 7200 
-                    send_user -- "$expect_out(buffer)"
+                        send_user -- "$expect_out(buffer)"
                         send "yes\r"
                         exp_continue
                     }
@@ -520,21 +541,21 @@ proc run_commands { prompt command } {
                         send " "
                         # bloody ^[[2K after " "
                         expect -re "^\[^\r\n]*\r" {}
-                    exp_continue
+                        exp_continue
                     }
                     -re "^ *--More--\[^\n\r]*" {
                         send " "
-                        exp_continue 
+                        exp_continue
                     }
                     -re "^<-+ More -+>\[^\n\r]*" {
                         send_user -- "$expect_out(buffer)"
                         send " "
-                        exp_continue 
+                        exp_continue
                     }
                 }
             }
         }
-    }   
+    }
     log_user 1
 
     if { [string compare "extreme" "$platform"] } {
@@ -550,15 +571,7 @@ proc run_commands { prompt command } {
             send -h "exit\r"
             exp_continue;
         }
-	"The system has unsaved changes"	{ # Force10 SFTOS
-						  if {$do_saveconfig} {
-						    catch {send "y\r"}
-						  } else {
-						    catch {send "n\r"}
-						  }
-						  exp_continue
-						}
-	"Would you like to save them now"	{ # Force10
+        "The system has unsaved changes" { # Force10 SFTOS
             if {$do_saveconfig} {
                 catch {send "y\r"}
             } else {
@@ -566,7 +579,15 @@ proc run_commands { prompt command } {
             }
             exp_continue
         }
-	-re "(Profile|Configuration) changes have occurred.*"	{
+        "Would you like to save them now"    { # Force10
+            if {$do_saveconfig} {
+                catch {send "y\r"}
+            } else {
+                catch {send "n\r"}
+            }
+            exp_continue
+        }
+        -re "(Profile|Configuration) changes have occurred.*"    {
             # Cisco CSS
             if {$do_saveconfig} {
                 catch {send "y\r"}
@@ -600,6 +621,14 @@ source_password_file $password_file
 set in_proc 0
 set exitval 0
 set prompt_match ""
+# if we have dont have a tty, we need some additional terminal settings
+if [catch {open /dev/tty w} ttyid] {
+    # no tty, ie: cron
+    set spawnopts "-nottycopy"
+    set stty_init "cols 132"
+} else {
+    catch {close ttyid} reason
+}
 foreach router [lrange $argv $i end] {
     set router [string tolower $router]
     # attempt at platform switching.
@@ -690,7 +719,7 @@ foreach router [lrange $argv $i end] {
     # Figure out prompts
     set u_prompt [find userprompt $router]
     if { "$u_prompt" == "" } {
-        set u_prompt "(\[Uu]sername|Login|login|user name|User):"
+        set u_prompt "(\[Uu]sername|Login|login|\[Uu]ser \[Nn]ame|User):"
     } else {
         set u_prompt [join [lindex $u_prompt 0] ""]
     }

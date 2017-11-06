@@ -76,7 +76,7 @@ set exitcmd "quit"
 # returns: 0 on success, 1 on failure, -1 if rsh was used successfully
 proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile } {
 	global command spawn_id in_proc do_command do_script platform passphrase
-	global prompt prompt_match u_prompt p_prompt e_prompt sshcmd spawnopts
+	global prompt prompt_match u_prompt p_prompt e_prompt sshcmd telnetcmd spawnopts
 	set in_proc 1
 	set uprompt_seen 0
 
@@ -86,14 +86,11 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 		incr progs -1
 		if [string match "telnet*" $prog] {
 			regexp {telnet(:([^[:space:]]+))*} $prog methcmd suffix port
-			if {"$port" == ""} {
-				#set retval [catch {spawn telnet $router} reason]
-				set cmd "telnet $router"
-			} else {
-				#set retval [catch {spawn telnet $router $port} reason]
-				set cmd "telnet $router $port"
-			}
-			set retval [catch {eval spawn $spawnopts [split $cmd { }]} reason]
+            set cmd "$telnetcmd $router"
+            if {"$port" !="" } {
+                append cmd " $port"
+            }
+			set retval [catch {eval spawn $spawnopts [split "$cmd" { }]} reason]
 			if { $retval } {
 				send_user "\nError: telnet failed: $reason\n"
 				return 1
@@ -581,6 +578,10 @@ foreach router [lrange $argv $i end] {
 	# Figure out connection method
 	set cmethod [find method $router]
 	if { "$cmethod" == "" } { set cmethod {{ssh} {telnet}} }
+
+    # Figure out the Telnet executable name
+    set telnetcmd [join [lindex [find telnetcmd $router] 0] ""]
+    if { "$telnetcmd" == "" } { set telnetcmd "@TELNET_CMD@" } }
 
 	# Figure out the SSH executable name
 	set sshcmd [join [lindex [find sshcmd $router] 0] ""]
