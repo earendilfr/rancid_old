@@ -52,7 +52,7 @@ sub inloop {
     my($cmd, $rval);
 
 TOP: while (<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         if (/[\]>#]\a?\s*quit/) {
             $clean_run = 1;
             last;
@@ -94,7 +94,7 @@ sub DisplayGeneric {
     ProcessHistory("COMMENTS", "", "", "#\n");
 
     while(<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -115,7 +115,7 @@ sub DisplayLocalUser {
     print STDERR "    In DisplayLocalUser: $_" if ($debug);
 
     while(<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -139,7 +139,7 @@ sub DisplayVersion {
     print STDERR "    In DisplayVersion: $_" if ($debug);
 
     while(<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -162,7 +162,7 @@ sub DisplayPower {
     print STDERR "    In DisplayPower: $_" if ($debug);
 
     while(<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -195,7 +195,7 @@ sub DisplayTransceiver {
 
     my $trans_present = 1;
     while(<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -219,7 +219,7 @@ sub DisplayNtp {
     print STDERR "    In DisplayNtp: $_" if ($debug);
 
     while(<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -242,7 +242,7 @@ sub DisplayOspf {
     print STDERR "    In DisplayOspf: $_" if ($debug);
 
     while(<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -263,7 +263,7 @@ sub DisplayDir {
     print (STDERR "    In DisplayDir: $_") if ($debug);
 
     while(<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -290,7 +290,7 @@ sub DisplayVlan {
     ProcessHistory("COMMENTS", "", "", "#\n");
 
     while (<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^/);
@@ -316,7 +316,7 @@ sub DisplayLLDPNei {
     my ($device_id,$device_ip,$local_int,$rem_int) = ('','','','');
 
     while (<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         $_ = filter_lines($_);
         last if (/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
@@ -351,7 +351,7 @@ sub DisplayCurrent {
     # We aren't chomping these lines
 
     while (<$INPUT>) {
-        tr/\015//d;
+        tr/(\015|\010\a?)//d;
         last if(/^\s*$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^\s*\^$/);
