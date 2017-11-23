@@ -461,7 +461,7 @@ proc run_commands { prompt command } {
                 } else {
                     set reprompt $prompt
                 }
-            } elseif {[regexp {^(copy)} $l_cmd]} {
+            } elseif {[regexp {^(archive|copy)} $l_cmd]} {
                 set timeout 7200
                 expect {
                     -re {(Destination filename|Source filename|Address or name of remote host) \[[^\r\n]+\]\?} { # specific match for copy running startup
@@ -484,7 +484,7 @@ proc run_commands { prompt command } {
                 }
             } else {
                 expect {
-                    -re "^Enter TEXT message\.  End with the character '(.)'\.?\[\n\r]+" {
+                    -re {^Enter TEXT message\.\s*End with the character '(.)'\.?[\n\r]+} {
                         set endchar $expect_out(1,string)
                         send_user -- "$expect_out(buffer)"
                         for {set j [ expr $i + 1 ]} {$j < $num_commands} {incr j} {
