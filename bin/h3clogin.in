@@ -581,7 +581,7 @@ foreach router [lrange $argv $i end] {
 
     # Figure out the Telnet executable name
     set telnetcmd [join [lindex [find telnetcmd $router] 0] ""]
-    if { "$telnetcmd" == "" } { set telnetcmd "@TELNET_CMD@" } }
+    if { "$telnetcmd" == "" } { set telnetcmd "@TELNET_CMD@" } 
 
 	# Figure out the SSH executable name
 	set sshcmd [join [lindex [find sshcmd $router] 0] ""]
