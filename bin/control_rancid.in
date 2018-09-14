@@ -346,7 +346,7 @@ trap 'rm -fr routers.db routers.all.new routers.down.new routers.up.new \
         printf(STDERR "WARNING: %s appears in routers.db multiple times\n", $F[0]);
         next;
     } $A{$F[0]} = join(";",@F);}
-    END { foreach $k (sort keys %A) { print("$A{$k}\n"); } }'
+    END { foreach $k (sort keys %A) { print("$A{$k}\n"); } }' \
     router.db > routers.db
 cut -d\; -f1,2,5 routers.db > routers.all.new
 if [ ! -f routers.all ] ; then touch routers.all; fi
