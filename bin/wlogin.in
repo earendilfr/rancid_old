@@ -460,6 +460,7 @@ foreach router [lrange $argv $i end] {
         set bckpwd ""
     }
 
+    set do_backupaccount 0
     if { "$bckuser" != "" && "$bckpwd" != "" } {
         set do_backupaccount 1
     }
