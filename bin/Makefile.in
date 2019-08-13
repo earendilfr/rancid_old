@@ -100,7 +100,7 @@ CONFIG_HEADER = $(top_builddir)/include/config.h
 CONFIG_CLEAN_FILES = login_top control_rancid a10login agmrancid \
 	alogin arancid anlogin avologin avorancid blogin brancid \
 	brlogin bntlogin bntrancid cat5rancid clogin csblogin cssrancid dllogin \
-	elogin erancid f5login f5rancid f10rancid flogin fnlogin fnrancid gvhlogin h3clogin \
+	elogin erancid f5login f5rancid f10rancid flogin fnlogin gvhlogin h3clogin \
 	hlogin htlogin htrancid jlogin jerancid llogin mrancid mrvlogin \
 	mtrancid mtlogin nlogin nrancid noklogin nslogin nsrancid panlogin prancid \
 	rblogin rivlogin rivrancid rrancid rtftpcopy tlogin trancid \
@@ -214,7 +214,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in \
 	$(srcdir)/f10rancid.in \
 	$(srcdir)/f5login.in $(srcdir)/f5rancid.in \
 	$(srcdir)/flogin.in \
-	$(srcdir)/fnlogin.in $(srcdir)/fnrancid.in \
+	$(srcdir)/fnlogin.in \
 	$(srcdir)/gvhlogin.in \
 	$(srcdir)/h3clogin.in \
 	$(srcdir)/hlogin.in \
@@ -373,7 +373,7 @@ AUTOMAKE_OPTIONS = foreign
 bin_SCRIPTS = a10login alogin agmrancid anlogin arancid avologin \
 	avorancid blogin brancid brlogin bntlogin bntrancid cat5rancid clogin \
 	control_rancid csblogin cssrancid dllogin elogin erancid f5login f5rancid \
-	f10rancid flogin fnlogin fnrancid h3clogin hlogin hrancid htlogin \
+	f10rancid flogin fnlogin h3clogin hlogin hrancid htlogin \
 	htrancid jerancid jlogin llogin mrancid mrvlogin mtlogin mtrancid \
 	nlogin noklogin nrancid nslogin nsrancid panlogin plogin rancid rblogin \
 	rivlogin rivrancid rrancid rtftpcopy srancid tlogin trancid \
@@ -510,8 +510,6 @@ f10rancid: $(top_builddir)/config.status $(srcdir)/f10rancid.in
 flogin: $(top_builddir)/config.status $(srcdir)/flogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 fnlogin: $(top_builddir)/config.status $(srcdir)/fnlogin.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-fnrancid: $(top_builddir)/config.status $(srcdir)/fnrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 gvhlogin: $(top_builddir)/config.status $(srcdir)/gvhlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
