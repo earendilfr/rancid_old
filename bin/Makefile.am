@@ -13,11 +13,11 @@ AUTOMAKE_OPTIONS=foreign
 
 bin_PROGRAMS = hpuifilter par
 bin_SCRIPTS = a10login alogin agmrancid anlogin arancid \
-	avologin avorancid blogin brancid brlogin cat5rancid clogin \
+	avologin avorancid blogin brancid brlogin bntlogin bntrancid cat5rancid clogin \
 	control_rancid csblogin cssrancid \
 	dllogin elogin erancid f5rancid f10rancid \
-	flogin fnlogin fxlogin hlogin hrancid htlogin \
-	htrancid jerancid jlogin mrancid mrvlogin mtlogin mtrancid \
+	flogin fnlogin fxlogin gvhlogin h3clogin hlogin hrancid htlogin \
+	htrancid jerancid jlogin llogin mrancid mrvlogin mtlogin mtrancid \
 	nlogin noklogin nrancid nslogin nsrancid panlogin plogin \
 	rancid rblogin rivlogin \
 	rivrancid rrancid rtftpcopy srancid tlogin trancid ulogin wlogin \

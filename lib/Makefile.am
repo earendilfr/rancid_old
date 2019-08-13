@@ -7,10 +7,12 @@
 AUTOMAKE_OPTIONS=foreign no-dependencies
 
 my_pkglibdir = $(pkglibdir)
-my_pkglib_DATA = rancid.pm acos.pm aeos.pm arbor.pm checkpoint.pm ciscowlc.pm \
-		 dell.pm edgemax.pm edgerouter.pm exos.pm foundry.pm gvh.pm h3c.pm \
+my_pkglib_DATA = rancid.pm acos.pm aeos.pm arbor.pm arcos.pm \
+		 bigip.pm checkpoint.pm ciscowlc.pm \
+		 dell.pm edgemax.pm edgerouter.pm exos.pm \
+		 fortigate.pm foundry.pm fss2.pm fxos.pm gvh.pm h3c.pm \
          ios.pm iossb.pm iosshtech.pm iosxr.pm junos.pm mrv.pm meinberg.pm nxos.pm \
-		 panos.pm rbt.pm rsa.pm sros.pm wavesvros.pm
+		 panos.pm rbt.pm rsa.pm sros.pm vrp.pm wavesvros.pm
 pkglib_in = $(my_pkglib_DATA:%=%.in)
 
 RANLIB= :
@@ -57,6 +59,7 @@ $(pkglib_in:%.in=%): Makefile $(top_builddir)/config.status
 acos.pm: acos.pm.in
 aeos.pm: aeos.pm.in
 arbor.pm: arbor.pm.in
+arcos.pm: arcos.pm.in
 bigip.pm: bigip.pm.in
 checkpoint.pm: checkpoint.pm.in
 ciscowlc.pm: ciscowlc.pm.in
@@ -65,10 +68,15 @@ edgemax.pm: edgemax.pm.in
 edgerouter.pm: edgerouter.pm.in
 eos.pm: eos.pm.in
 exos.pm: exos.pm.in
+fortigate.pm: fortigate.pm.in
 foundry.pm: foundry.pm.in
+fss2.pm: fss2.pm.in
+fxos.pm: fxos.pm.in
 gvh.pm: gvh.pm.in
 h3c.pm: h3c.pm.in
 ios.pm: ios.pm.in
+iossb.pm: iossb.pm.in
+iosshtech.pm: iosshtech.pm.in
 iosxr.pm: iosxr.pm.in
 junos.pm: junos.pm.in
 rancid.pm: rancid.pm.in
@@ -79,4 +87,5 @@ panos.pm: panos.pm.in
 rsa.pm: rsa.pm.in
 rbt.pm: rbt.pm.in
 sros.pm: sros.pm.in
+vrp.pm: vrp.pm.in
 wavesvros.pm: wavesvros.pm.in

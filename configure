@@ -6119,8 +6119,6 @@ ac_config_files="$ac_config_files bin/login_top"
 copyright=$srcdir/COPYING
 login_top=$srcdir/bin/login_top
 
-ac_config_files="$ac_config_files bin/control_rancid"
-
 ac_config_files="$ac_config_files bin/a10login"
 
 ac_config_files="$ac_config_files bin/agmrancid"
@@ -6150,8 +6148,6 @@ ac_config_files="$ac_config_files bin/elogin bin/erancid"
 ac_config_files="$ac_config_files bin/f5rancid"
 
 ac_config_files="$ac_config_files bin/f10rancid"
-
-ac_config_files="$ac_config_files bin/f5login bin/f5rancid"
 
 ac_config_files="$ac_config_files bin/flogin"
 
@@ -6958,7 +6954,6 @@ do
     "include/version.h") CONFIG_FILES="$CONFIG_FILES include/version.h" ;;
     "include/config.h") CONFIG_HEADERS="$CONFIG_HEADERS include/config.h" ;;
     "bin/login_top") CONFIG_FILES="$CONFIG_FILES bin/login_top" ;;
-    "bin/control_rancid") CONFIG_FILES="$CONFIG_FILES bin/control_rancid" ;;
     "bin/a10login") CONFIG_FILES="$CONFIG_FILES bin/a10login" ;;
     "bin/agmrancid") CONFIG_FILES="$CONFIG_FILES bin/agmrancid" ;;
     "bin/alogin") CONFIG_FILES="$CONFIG_FILES bin/alogin" ;;
@@ -6984,11 +6979,9 @@ do
     "bin/flogin") CONFIG_FILES="$CONFIG_FILES bin/flogin" ;;
     "bin/fnlogin") CONFIG_FILES="$CONFIG_FILES bin/fnlogin" ;;
     "bin/fxlogin") CONFIG_FILES="$CONFIG_FILES bin/fxlogin" ;;
-    "bin/fnrancid") CONFIG_FILES="$CONFIG_FILES bin/fnrancid" ;;
     "bin/gvhlogin") CONFIG_FILES="$CONFIG_FILES bin/gvhlogin" ;;
     "bin/h3clogin") CONFIG_FILES="$CONFIG_FILES bin/h3clogin" ;;
     "bin/hlogin") CONFIG_FILES="$CONFIG_FILES bin/hlogin" ;;
-    "bin/hrancid") CONFIG_FILES="$CONFIG_FILES bin/hrancid" ;;
     "bin/htlogin") CONFIG_FILES="$CONFIG_FILES bin/htlogin" ;;
     "bin/htrancid") CONFIG_FILES="$CONFIG_FILES bin/htrancid" ;;
     "bin/jlogin") CONFIG_FILES="$CONFIG_FILES bin/jlogin" ;;
@@ -7747,7 +7740,6 @@ See \`config.log' for more details" "$LINENO" 5; }
   rm -f conftest-deps.mk
 }
  ;;
-    "bin/control_rancid":F) chmod a+x $ac_file ;;
     "bin/a10login":F) chmod a+x $ac_file ;;
     "bin/agmrancid":F) chmod a+x $ac_file ;;
     "bin/alogin":F) chmod a+x $ac_file ;;
@@ -7773,11 +7765,9 @@ See \`config.log' for more details" "$LINENO" 5; }
     "bin/flogin":F) chmod a+x $ac_file ;;
     "bin/fnlogin":F) chmod a+x $ac_file ;;
     "bin/fxlogin":F) chmod a+x $ac_file ;;
-    "bin/fnrancid":F) chmod a+x $ac_file ;;
     "bin/gvhlogin":F) chmod a+x $ac_file ;;
     "bin/h3clogin":F) chmod a+x $ac_file ;;
     "bin/hlogin":F) chmod a+x $ac_file ;;
-    "bin/hrancid":F) chmod a+x $ac_file ;;
     "bin/htlogin":F) chmod a+x $ac_file ;;
     "bin/htrancid":F) chmod a+x $ac_file ;;
     "bin/jlogin":F) chmod a+x $ac_file ;;
