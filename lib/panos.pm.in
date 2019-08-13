@@ -1,6 +1,6 @@
 package panos;
 ##
-## $Id: panos.pm.in 3226 2016-01-15 21:41:54Z heas $
+## $Id: panos.pm.in 3928 2018-11-16 18:50:36Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -13,7 +13,7 @@ package panos;
 #  panos.pm - Palo Alto Networks rancid procedures
 #
 # 2013-01-05 - fix to put cli pager after scripting-mode is off - doug
-#               hughesd@deshawresearch.com
+#			   hughesd@deshawresearch.com
 #
 
 use 5.010;
@@ -53,50 +53,50 @@ sub inloop {
     # on second discovery.
 
 TOP: while(<$INPUT>) {
-    tr/\015//d;
-    if  (/[>#]\s?exit$/) {
-        $clean_run = 1;
-        print STDERR "exiting\n" if ($debug);
-        # because exit occurs implicitly, too
-        delete($commands{exit});
-        last;
-    }
-    print STDERR ("line: $_") if ($debug);
-    if (/^Error:/) {
-        print STDOUT ("$host panlogin error: $_");
-        print STDERR ("$host panlogin error: $_") if ($debug);
-        $clean_run = 0;
-        last;
-    }
-    while (/\w+@\S+[>#]\s*($cmds_regexp)\s*$/) {
-        $cmd = $1;
-        if (!defined($prompt)) {
-        $prompt = ($_ =~ /^([^>]+>)/)[0];
-        $prompt =~ s/>/\[#>\]/;
-        $prompt =~ s/\(/\\(/;
-        $prompt =~ s/\)/\\)/;
-        print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
-        }
-        print STDERR ("HIT COMMAND:$_\n") if ($debug);
-        print STDERR ("COMMAND is: $cmd|$commands{$cmd}\n") if ($debug);
-        if (! defined($commands{$cmd})) {
-        print STDERR "$host: found unexpected command - \"$cmd\"\n";
-        $clean_run = 0;
-        last TOP;
-        }
-        if (! defined(&{$commands{$cmd}})) {
-        printf(STDERR "$host: undefined function - \"%s\"\n",
-               $commands{$cmd});
-        $clean_run = 0;
-        last TOP;
-        }
-        $rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
-        delete($commands{$cmd});
-        if ($rval == -1) {
-        $clean_run = 0;
-        last TOP;
-        }
-    }
+	tr/\015//d;
+	if  (/[>#]\s?exit$/) {
+	    $clean_run = 1;
+	    print STDERR "exiting\n" if ($debug);
+	    # because exit occurs implicitly, too
+	    delete($commands{exit});
+	    last;
+	}
+	print STDERR ("line: $_") if ($debug);
+	if (/^Error:/) {
+	    print STDOUT ("$host panlogin error: $_");
+	    print STDERR ("$host panlogin error: $_") if ($debug);
+	    $clean_run = 0;
+	    last;
+	}
+	while (/\w+@\S+[>#]\s*($cmds_regexp)\s*$/) {
+	    $cmd = $1;
+	    if (!defined($prompt)) {
+		$prompt = ($_ =~ /^([^>]+>)/)[0];
+		$prompt =~ s/>/\[#>\]/;
+		$prompt =~ s/\(/\\(/;
+		$prompt =~ s/\)/\\)/;
+		print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
+	    }
+	    print STDERR ("HIT COMMAND:$_\n") if ($debug);
+	    print STDERR ("COMMAND is: $cmd|$commands{$cmd}\n") if ($debug);
+	    if (! defined($commands{$cmd})) {
+		print STDERR "$host: found unexpected command - \"$cmd\"\n";
+		$clean_run = 0;
+		last TOP;
+	    }
+	    if (! defined(&{$commands{$cmd}})) {
+		printf(STDERR "$host: undefined function - \"%s\"\n",
+		       $commands{$cmd});
+		$clean_run = 0;
+		last TOP;
+	    }
+	    $rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
+	    delete($commands{$cmd});
+	    if ($rval == -1) {
+		$clean_run = 0;
+		last TOP;
+	    }
+	}
     }
 }
 
@@ -108,17 +108,34 @@ sub ShowInfo {
     print STDERR "    In ShowInfo:: $_" if ($debug);
 
     while (<$INPUT>) {
-    tr/\015//d;
-    last if (/^$prompt/);
-    next if (/^(time:|uptime:)/);
-    next if (/^(app|av|global-protect-datafile|threat|wf-private|wildfire|url-filtering)-(version|release-date):/);
+	tr/\015//d;
+	last if (/^$prompt/);
+	next if (/^(time:|uptime:)/);
+	next if (/^(app|av|global-protect-datafile|threat|wf-private|wildfire|url-filtering)-(version|release-date):/);
 
-    ProcessHistory("INFO","","","#$_");
+	ProcessHistory("INFO","","","#$_");
     }
     ProcessHistory("INFO","","","#\n");
     return(0);
 }
 
+# This routine parses "show chassis inventory"
+sub ShowInventory {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    my($slot);
+
+    print STDERR "    In ShowInventory:: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	last if (/^$prompt/);
+	return(1) if (/^Invalid syntax/);
+
+	ProcessHistory("INV","","","#$_");
+    }
+    ProcessHistory("INV","","","#\n");
+    return(0);
+}
 
 # This routine parses "show config running"
 sub ShowConfig {
@@ -126,14 +143,14 @@ sub ShowConfig {
     print STDERR "    In ShowConfig: $_" if ($debug);
 
     while (<$INPUT>) {
-    tr/\015//d;
-    if (/^}\s*$|\[edit\]/) {
-        $found_end = 1;
-        return(1);
-    }
+	tr/\015//d;
+	if (/^}\s*$|\[edit\]/) {
+	    $found_end = 1;
+	    return(1);
+	}
 
-    ProcessHistory("","","","$_");
-    # end of config
+	ProcessHistory("","","","$_");
+	# end of config
     }
     return 0;
 }

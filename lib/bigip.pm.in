@@ -1,6 +1,6 @@
 package bigip;
 ##
-## $Id: bigip.pm.in 3459 2016-09-08 21:37:33Z heas $
+## $Id: bigip.pm.in 3933 2018-11-30 19:28:47Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -84,6 +84,23 @@ TOP: while(<$INPUT>) {
     }
 }
 
+# This routine parses a single command that returns no required info.  The
+# output is discarded.
+sub RunCommandTMSH {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In RunCommandTMSH: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	# Needed for when our prompt changes due to our executed command (for
+	# example, after executing 'cd /')
+	$prompt = ($_ =~ /^([^#]+#)/)[0];
+	$prompt =~ s/([][}{)(\\])/\\$1/g;
+	last if (/^$prompt/);
+    }
+    return(0);
+}
+
 # This routine parses "tmsh show /sys version"
 sub ShowVersion {
     my($INPUT, $OUTPUT, $cmd) = @_;
@@ -95,20 +112,24 @@ sub ShowVersion {
     next if (/^(\s*|\s*$cmd\s*)$/);
     return(-1) if (/command authorization failed/i);
 
-    if (/^kernel:/i && ($_ = <$INPUT>)) {
-        ProcessHistory("COMMENTS","keysort","A3","#Image: Kernel: $_");
+	/^kernel:/i && ($_ = <$INPUT>) &&
+	    ProcessHistory("COMMENTS","keysort","A3","#Image: Kernel: $_") &&
         next;
-    } elsif (/^package:/i) {
+	if (/^package:/i) {
         my($line);
 
         while ($_ = <$INPUT>) {
         tr/\015//d;
-        last if (/(:|^$prompt)/);
+		last if (/:/);
+		last if (/^$prompt/);
         chomp;
         $line .= " $_";
         }
-        ProcessHistory("COMMENTS","keysort","A2","#Image: Package:$line\n");
-    } elsif (/:/) {
+	    ProcessHistory("COMMENTS","keysort","A2",
+			   "#Image: Package:$line\n");
+	}
+
+	if (/:/) {
         ProcessHistory("COMMENTS","keysort","C1","#$_");
     } else {
         ProcessHistory("COMMENTS","keysort","C1","#\t$_");
@@ -138,8 +159,10 @@ sub ShowHardware {
         s/^\ \ ([0-9]+)(\ +).*HSBe/  $1$2REMOVED HSBe/i;
         s/^\ \ ([0-9]+)(\ +).*TMP421 on die/  $1$2REMOVED TMP421 on die/i;
         s/^\ \ ([0-9]+)(\ +)[0-9]+\ +[0-9]+/  $1$2REMOVED     REMOVED/;
-        /Type: / && ProcessHistory("COMMENTS","keysort","A0","#Chassis type: $'");
-        ProcessHistory("COMMENTS","keysort","B1","#$_");
+        /Type: / && ProcessHistory("COMMENTS","keysort","A0",
+                                   "#Chassis type: $'");
+
+        ProcessHistory("COMMENTS","keysort","B1","#$_") && next;
     }
     $found_hardware = 1;
     return(0);
@@ -240,23 +263,27 @@ sub WriteTerm {
     ProcessHistory("","","","#\n");
     while (<$INPUT>) {
         tr/\015//d;
-        return(0) if ($found_end);  # Only do this routine once
-        if (/^$prompt/) { $found_end++; last; } # end of config - hopefully.  f5 does not have a reliable end-of-config tag
-        next if (/^(\s*|\s*$cmd\s*)$/);
-        return(-1) if (/command authorization failed/i);
-        return(1) if (/^Data Input Error:/);
-        return(1) if /(Invalid input detected|Type help or )/;
+        next if (/^\s*$/);
 
         # Ignore monitor down state, save the config as up.
         s/state down$/state up/i;
 
+        # end of config - hopefully.  f5 does not have a reliable end-of-config
+        # tag.
+        if (/^$prompt/) {
+            $found_end++;
+            last;
+        }
+        return(-1) if (/command authorization failed/i);
+
         $lines++;
 
-        if (/(bind-pw|encrypted-password|user-password-encrypted|passphrase) / && $filter_pwds >= 2) {
+        if (/(bind-pw|encrypted-password|user-password-encrypted|passphrase) / && $filter_pwds >= 1) {
             ProcessHistory("ENABLE","","","# $1 <removed>\n");
             next;
         }
-        if (/(auth-password-encrypted) / && ($filter_osc || $filter_pwds > 2)) {
+        if (/(auth-password-encrypted) / && 
+	    ($filter_osc || $filter_pwds > 1)) {
             ProcessHistory("ENABLE","","","# $1 <removed>\n");
             next;
         }
@@ -266,7 +293,7 @@ sub WriteTerm {
     }
 
     if ($lines < 3) {
-        printf(STDERR "ERROR: $host configuration appears truncated.\n") if ($debug);
+        printf(STDERR "ERROR: $host configuration appears truncated.\n");
         $found_end = 0;
         return(-1);
     }

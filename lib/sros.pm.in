@@ -1,6 +1,6 @@
 package sros;
 ##
-## $Id: sros.pm.in 3730 2017-09-15 18:38:42Z heas $
+## $Id: sros.pm.in 3939 2019-01-16 18:53:34Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -36,14 +36,11 @@ sub init {
 
     # add content lines and separators
     ProcessHistory("","","","#RANCID-CONTENT-TYPE: $devtype\n");
-# suppress newline A0
     ProcessHistory("COMMENTS","keysort","A0","#\n");	# memory summary
-# suppress newline B0
     ProcessHistory("COMMENTS","keysort","B0","#\n");	# chassis summary
     ProcessHistory("COMMENTS","keysort","C0","#\n");	# show information
     ProcessHistory("COMMENTS","keysort","D0","#\n");    # show redundancy
     ProcessHistory("COMMENTS","keysort","E0","#\n");	# show chassis
-    ProcessHistory("COMMENTS","keysort","F0","#\n");	# show bootlog
 
     0;
 }
@@ -59,7 +56,8 @@ CMD:	if (/[#]\s?logout\s*$/) {
 	    $clean_run = 1;
 	    last;
 	}
-	if (/^Error:/) {
+	if (/^Error:/ &&
+	    !(/^Error: Invalid parameter\./ || /^Error: Bad command\./)) {
 	    print STDOUT ("$host clogin error: $_");
 	    print STDERR ("$host clogin error: $_") if ($debug);
 	    $clean_run = 0;
@@ -85,7 +83,7 @@ CMD:	if (/[#]\s?logout\s*$/) {
 		$clean_run = 0;
 		last TOP;
 	    }
-	    # filter the modified config indicator from the line.
+	    # filter the modified-config indicator ("*") from the line.
 	    /^$prompt/ && s/^[*]//;
 	    $rval = &{$commands{$cmd}}($INPUT, $OUTPUT, $cmd);
 	    delete($commands{$cmd});
@@ -106,7 +104,6 @@ CMD:	if (/[#]\s?logout\s*$/) {
 sub BootLog {
     my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In BootLog: $_" if ($debug);
-    ProcessHistory("COMMENTS","keysort","F0","# $_");
 
     while (<$INPUT>) {
 	tr/\015//d;
@@ -118,16 +115,6 @@ sub BootLog {
         # if file doesn't exist, return 0
         return(0) if (/minor: cli could not access file/i);
 
-	/time from clock is/i && next;
-	/^(text:|executing|login:)/i && next;
-	/^File/i && next;
-	/^[-=]+$/i && next;
-	/executed [0-9,]+ lines in [0-9.]+ seconds/i && next;
-
-	if (/chassis serial number is \'(\S+)\'/i) {
-	    ProcessHistory("COMMENTS","keysort","B3",
-			   "#Chassis serial number: $1\n");
-	}
 	if (/total memory:\s+(\S+)\s+chassis type:\s+(\S+)\s+card type:\s+(\S+)/i) {
 	    next if ($memoryseen++);
 	    ProcessHistory("COMMENTS","keysort","A1",
@@ -137,8 +124,9 @@ sub BootLog {
 	    ProcessHistory("COMMENTS","keysort","B2",
 			   "#Card type: $3\n");
 	}
-
-	ProcessHistory("COMMENTS","keysort","F0","# $_");
+	/^chassis serial number is \'(.*)\'/i &&
+	    ProcessHistory("COMMENTS","keysort","B1",
+			   "#Chassis serial number: $1\n") && next;
     }
 }
 # This routine parses "show bof"
@@ -154,8 +142,12 @@ sub ShowBOF {
 	next if (/^\s+\^$/);
 	return(-1) if (/error: invalid parameter/i);
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
+	/^INFO: CLI #\d+: Switching to the .* engine/ && next;
+	/show bof/i && next;
 
-	/^[-=]+$/i && next;
+	/[-=]+$/i && next;
 	ProcessHistory("BOF","","","# $_");
     }
 }
@@ -172,12 +164,15 @@ sub ShowCardDetail {
 	next if (/^\s+\^$/);
 	return(-1) if (/error: invalid parameter/i);
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
 
 	# temp varies in "show card detail"
 	next if (/^(\s+Temperature\s+:)\s+\d+C/);
-	next if (/^Config file last (saved|modified)\s+:/ && $filter_osc);
+	next if (/^(Config file|BOF) last (saved|modified)\s+:/ && ($filter_osc >= 2));
 
-	#/^[-=]+$/i && next;
+	/[-=]+$/i && next;
+
 	ProcessHistory("COMMENTS","keysort","E6","# $_");
     }
 }
@@ -194,8 +189,10 @@ sub ShowCardState {
 	next if (/^\s+\^$/);
 	return(-1) if (/error: invalid parameter/i);
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
 
-	/^[-=]+$/i && next;
+	/[-=]+$/i && next;
 	ProcessHistory("COMMENTS","keysort","E5","# $_");
     }
 }
@@ -212,8 +209,20 @@ sub ShowChassis {
 	next if (/^\s+\^$/);
 	return(-1) if (/error: invalid parameter/i);
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
+	/^$/i && next; # extra blank lines tr doesn't remove
 
-	/^[-=]+$/i && next;
+	/[-=]+$/i && next;
+
+	/^\s+type\s+:\s+(.*)/i &&
+	    ProcessHistory("COMMENTS","keysort","E1","# $_") &&
+	    next;
+	/^\s+serial number\s+:\s+(.*)/i &&
+	    ProcessHistory("COMMENTS","keysort","B1",
+			   "#Chassis serial number: $1\n") &&
+	    ProcessHistory("COMMENTS","keysort","E1","# $_") &&
+	    next;
 	ProcessHistory("COMMENTS","keysort","E1","# $_");
     }
 }
@@ -230,12 +239,14 @@ sub ShowChassisEnv {
 	next if (/^\s+\^$/);
 	return(-1) if (/error: invalid parameter/i);
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
 
 	/speed/i && next;
 	/volts/i && next;
 	/watts/i && next;
 	/amps/i && next;
-	/^=+$/i && next;
+	/[-=]+$/i && next;
 	ProcessHistory("COMMENTS","keysort","E2","# $_");
     }
 }
@@ -243,7 +254,7 @@ sub ShowChassisEnv {
 sub ShowChassisPS {
     my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowChassisPS: $_" if ($debug);
-    ProcessHistory("COMMENTS","keysort","F3","#\n# $_");
+    ProcessHistory("COMMENTS","keysort","E3","#\n# $_");
 
     while (<$INPUT>) {
 	tr/\015//d;
@@ -251,10 +262,14 @@ sub ShowChassisPS {
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	next if (/^\s+\^$/);
 	return(0) if (/error: invalid parameter/i);	# cmd for 7750 SR only
+	/\^+/i && next;
+	return(0) if (/minor: .* unknown element/i);    # cmd for 7750 SR only
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
 
-	/^=+$/i && next;
-	ProcessHistory("COMMENTS","keysort","F3","# $_");
+	/[-=]+$/i && next;
+	ProcessHistory("COMMENTS","keysort","E3","# $_");
     }
 }
 # This routine parses "show chassis power-management"
@@ -269,12 +284,16 @@ sub ShowChassisPM {
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	next if (/^\s+\^$/);
 	return(0) if (/error: invalid parameter/i);	# cmd for 7950 XRS only
+	/\^+/i && next;
+	return(0) if (/minor: .* unknown element/i);    # cmd for 7950 XRS only
 	return(-1) if (/minor: cli command not allowed for this user/i);
+        # context lines
+        /^\[]$/i && next;
 
 	/volts/i && next;
 	/watts/i && next;
 	/amps/i && next;
-	/^=+$/i && next;
+	/[-=]+$/i && next;
 	ProcessHistory("COMMENTS","keysort","E4","# $_");
     }
 }
@@ -291,6 +310,10 @@ sub ShowDebug {
 	next if (/^\s+\^$/);
 	return(-1) if (/error: invalid parameter/i);
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
+	/^INFO: CLI #\d+: Switching to the .* engine/ && next;
+	/show debug/i && next;
 
 	ProcessHistory("","","","$_");
     }
@@ -308,11 +331,12 @@ sub ShowRedundancy {
 	next if (/^\s+\^$/);
         # not on 7210 SAS, return 0
 	return(0) if (/error: invalid parameter/i);
+	return(0) if (/minor: .* synchronization is only supported/i);
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
 
-	/synchronization .* only supported on dual/i && return(0);
-
-	/^[-=]+$/i && next;
+	/[-=]+$/i && next;
 	/standby up time/i && next;
 	/last config file sync time/i && next;
 	/last boot env sync time/i && next;
@@ -336,10 +360,19 @@ sub ShowSystemInfo {
 	next if (/^\s+\^$/);
 	return(-1) if (/error: invalid parameter/i);
 	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
 
-	/^[-=]+$/i && next;
+	/[-=]+$/i && next;
 	/system up time/i && next;
-	/time last saved/i && next;
+	# User Last Modified     : someuname
+	# Time Last Modified     : 2018/05/29 09:15:32
+	/(user|time) last modified/i && ($filter_osc >= 2) && next;
+	# Changes Since Last Save: Yes
+	/changes since last save/i && ($filter_osc >= 2) && next;
+	/time last saved/i && ($filter_osc >= 2) && next;
+
+
 	if (/system type\s+:\s+(.*)/i) {
 	    $proc = $1;
 	    ProcessHistory("COMMENTS","keysort","B4",
@@ -404,6 +437,63 @@ sub WriteTerm {
 			       "#$1 <removed> $'") && next;
 	    } else {
 		ProcessHistory("SNMPSERVERCOMM","keysort","$_","$_") && next;
+	    }
+	}
+	if (/^(\s+trap-target\s+.*)\s+(notify-community)\s+("\S+")/) {
+	    if ($filter_commstr) {
+		ProcessHistory("","","","#$1 $2 <removed>$'") && next;
+	    } else {
+		ProcessHistory("","","","$_") && next;
+	    }
+	}
+	if (/^(\s+password)\s+("\$\S+")/) {
+	    if ($filter_pwds >= 2) {
+		ProcessHistory("","","","#$1 <removed>$'") && next;
+	    } else {
+		ProcessHistory("","","","$_") && next;
+	    }
+	}
+
+	# end of config.
+	if (/^# finished \S{3} \S{3} /i) {
+	    $found_end = 1;
+	    return(0);
+	}
+	ProcessHistory("","","","$_");
+    }
+
+    return(0);
+}
+
+# This routine parses "admin show configuration" in the MD-CLI
+sub WriteTermMD {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In WriteTermMD: $_" if ($debug);
+    ProcessHistory("","","","#\n# $_");
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	last if (/^$prompt/);
+	next if (/^(\s*|\s*$cmd\s*)$/);
+	next if (/^\s+\^$/);
+	return(-1) if (/error: invalid parameter/i);
+	return(-1) if (/minor: cli command not allowed for this user/i);
+	# context lines
+	/^\[]$/i && next;
+
+	/# (timos-|all rights reserved|built on)/i && next;
+	/# Generated /i && next;
+
+	/^#-+$/i && next;
+	s/echo \"(.*)\"/# $1/i;
+
+	# password/community filtering
+	if (/^(\s+community) "[^"]*" /) {
+	    if ($filter_commstr) {
+		ProcessHistory("SNMPSERVERCOMM","","", "#$1 <removed> $'") &&
+		next;
+	    } else {
+		ProcessHistory("SNMPSERVERCOMM","","","$_") && next;
 	    }
 	}
 	if (/^(\s+trap-target\s+.*)\s+(notify-community)\s+("\S+")/) {

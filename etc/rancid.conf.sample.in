@@ -8,12 +8,6 @@ TERM=network;export TERM
 # Collating locale
 LC_COLLATE="POSIX"; export LC_COLLATE
 #
-# Check that the effective UID is not root, which could lead to permissions
-# problems for user who is supposed to be running rancid.  If you know what
-# you are doing, disable this check by commenting these lines.
-uid=`perl -e 'print "$>"'`
-test "$uid" -eq 0 && echo "Do not run $0 as root!" && exit 1
-#
 # Create files w/o world read/write/exec permissions, but read/exec permissions
 # for group.
 umask 027
@@ -35,6 +29,15 @@ TMPDIR=/tmp; export TMPDIR
 # relative.
 BASEDIR=@localstatedir@; export BASEDIR
 PATH=@bindir@:@ENV_PATH@; export PATH
+#
+# Check that the effective UID is not root, which could lead to permissions
+# problems for user who is supposed to be running rancid.  If you know what
+# you are doing, disable this check by commenting these lines.
+uid=`perl -e 'print "$>"'`
+if [ -e /proc/1/cgroup ] ; then
+    DOCKER=`cat /proc/1/cgroup | grep "cpu.*\/docker"`
+fi
+test "x$DOCKER" = "x" && test "$uid" -eq 0 && echo "Do not run $0 as root!" && exit 1
 #
 # Set to the name of the sendmail executable (or script) that will accept the
 # -t option to take its rcpt and other headers from std-in and $MAILOPTS (see
@@ -86,8 +89,8 @@ RCSSYS=@RCSSYS@; export RCSSYS
 #NOCOMMSTR=YES; export NOCOMMSTR
 #
 # FILTER_OSC determines if oscillating data such as keys, passwords, etc are
-# filtered from configs by the value set (NO | YES).  FILTER_PWDS may override
-# this.  see rancid.conf(5).
+# filtered from configs by the value set (NO | YES | ALL).  FILTER_PWDS may
+# override this.  see rancid.conf(5).
 #FILTER_OSC=YES; export FILTER_OSC
 #
 # How many times failed collections are retried (for each run) before

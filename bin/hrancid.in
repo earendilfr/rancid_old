@@ -1,6 +1,6 @@
 #! @PERLV_PATH@
 ##
-## $Id: hrancid.in 3702 2017-07-19 12:13:33Z heas $
+## $Id: hrancid.in 3767 2018-02-20 18:13:30Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -203,6 +203,9 @@ sub ShowTechTransceivers {
 	    }
 	    next;
 	}
+	# KB.16.05.0003 5406R firmware bug
+	next if (/^\s*show time\s*$/i);
+	next if (/^\s*\S{3} \S{3}\s+\d+\s+\d+:\d+:\d+\s+\d+\s*$/);
 
 	ProcessHistory("COMMENTS","keysort","G0",";$_");
     }

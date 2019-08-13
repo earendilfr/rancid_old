@@ -1,6 +1,6 @@
 package ios;
 ##
-## $Id: ios.pm.in 3717 2017-07-20 15:33:07Z heas $
+## $Id: ios.pm.in 3952 2019-01-23 02:14:45Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -47,6 +47,8 @@ our $H0;
 our $I0;
 our $DO_SHOW_VLAN;
 
+our $vss_show_module;			 # Use "show module switch" on 6k VSS systems
+
 @ISA = qw(Exporter rancid main);
 #XXX @Exporter::EXPORT = qw($VERSION @commandtable %commands @commands);
 
@@ -81,6 +83,7 @@ sub init {
     $I0 = 0;
     $DO_SHOW_VLAN = 0;
 
+    $vss_show_module = 0;		# Use "show module switch" on 6k VSS systems
     # add content lines and separators
     ProcessHistory("","","","!RANCID-CONTENT-TYPE: $devtype\n!\n");
     ProcessHistory("COMMENTS","keysort","B0","!\n");
@@ -122,7 +125,8 @@ TOP: while(<$INPUT>) {
                 last TOP;
             }
             if (! defined(&{$commands{$cmd}})) {
-                printf(STDERR "$host: undefined function - \"%s\"\n",$commands{$cmd});
+		printf(STDERR "$host: undefined function - \"%s\"\n",
+		       $commands{$cmd});
                 $clean_run = 0;
                 last TOP;
             }
@@ -241,21 +245,24 @@ sub ShowVersion {
     /^This (PIX|platform) has an?\s+(.*)$/ &&
         ProcessHistory("COMMENTS","keysort","D1", "!$_") && next;
     /^(Cisco )?IOS .* Software,? \(([A-Za-z0-9_-]*)\), .*Version\s+(.*)$/ &&
-        ProcessHistory("COMMENTS","keysort","F1","!Image:$slave Software: $2, $3\n") && next;
+	    ProcessHistory("COMMENTS","keysort","F1",
+		"!Image:$slave Software: $2, $3\n") && next;
     /^([A-Za-z-0-9_]*) Synced to mainline version: (.*)$/ &&
-        ProcessHistory("COMMENTS","keysort","F2","!Image:$slave $1 Synced to mainline version: $2\n") && next;
+	    ProcessHistory("COMMENTS","keysort","F2",
+		"!Image:$slave $1 Synced to mainline version: $2\n") && next;
     /^Compiled (.*)$/ &&
-        ProcessHistory("COMMENTS","keysort","F3","!Image:$slave Compiled: $1\n") && next;
+	    ProcessHistory("COMMENTS","keysort","F3",
+		"!Image:$slave Compiled: $1\n") && next;
     /^ROM: (IOS \S+ )?(System )?Bootstrap.*(Version.*)$/ &&
-        ProcessHistory("COMMENTS","keysort","G1","!ROM Bootstrap: $3\n") && next;
+	    ProcessHistory("COMMENTS","keysort","G1",
+		"!ROM Bootstrap: $3\n") && next;
     if (/^Hardware:\s+(.*), (.* RAM), CPU (.*)$/) {
-        ProcessHistory("COMMENTS","keysort","A1","!Chassis type: $1 - a PIX\n");
-        ProcessHistory("COMMENTS","keysort","A2","!CPU: $3\n");
+	    ProcessHistory("COMMENTS","keysort","A1",
+		"!Chassis type: $1 - a PIX\n");
+	    ProcessHistory("COMMENTS","keysort","A2",
+		"!CPU: $3\n");
         ProcessHistory("COMMENTS","keysort","B1", "!Memory: $2\n");
     }
-        elsif (/^Hardware:\s+(.*)$/) {
-            ProcessHistory("COMMENTS","keysort","A1","!Chassis type: $1 - a PIX\n");
-        }
     /^serial number:\s+(.*)$/i &&
         ProcessHistory("COMMENTS","keysort","C1", "!Serial Number: $1\n") &&
         next;
@@ -279,10 +286,6 @@ sub ShowVersion {
          next;
     /^System serial number\s+: (.*)$/i && ($type eq "3750" || $type eq "3650") &&
         ProcessHistory("COMMENTS","keysort","C1", "!Serial number: $1\n") &&
-         next;
-    /^Base ethernet MAC Address\s+: (.*)$/i && ($type eq "3750" || $type eq "3650") &&
-        ProcessHistory("COMMENTS","keysort","C1", "!--------------\n") &&
-        ProcessHistory("COMMENTS","keysort","C1", "!MAC address: $1\n") &&
         next;
     # CatOS 3500xl stuff
     /^system serial number\s*:\s+(.*)$/i &&
@@ -290,8 +293,6 @@ sub ShowVersion {
         next;
     /^Model / &&
         ProcessHistory("COMMENTS","keysort","C2", "!$_") && next;
-    /^Base ethernet MAC Address\s+:\s+(.*)$/i &&
-        ProcessHistory("COMMENTS","keysort","C1", "!MAC address: $1\n") && next;
     /^Motherboard / &&
         ProcessHistory("COMMENTS","keysort","C3", "!$_") && next;
     /^Power supply / &&
@@ -317,7 +318,7 @@ sub ShowVersion {
     /^System image file is "([^\"]*)"$/ &&
         ProcessHistory("COMMENTS","keysort","F5","!Image: $1\n") && next;
     # 2800 at least don't have a processor line
-    if ((/(\S+(?:\sseries)?)\s+(?:\(([ \S]+)\)\s+processor|\(revision[^)]+\)).*\s+with (\S+k) bytes/i) ||
+	if ((/(\S+(?:\sseries)?)\s+(?:\((\S+)\)\s+processor|\(revision[^)]+\)).*\s+with (\S+k) bytes/i) ||
         (/isco\s+(\S+)\s+\(.+\)\s+with (\S+[kK]) bytes/)) {
         $proc = $1;
         my($cpu) = $2;
@@ -574,7 +575,9 @@ sub ShowActivationKey {
                 if (/^([^:]+: \S+\s+)(.*)/) {
                     my($L) = $1;
                     my($T) = $2;
-                    if ($T !~ /perpetual/i) { $T = "<limited>";    }
+		    if ($T !~ /perpetual/i) {
+			$T = "<limited>";
+		    }
                     ProcessHistory("COMMENTS","keysort","LICENSE","! $L $T\n");
                 } else {
                     ProcessHistory("COMMENTS","keysort","LICENSE","! $_\n");
@@ -1062,6 +1065,12 @@ sub ShowFlash {
         s/^$1\s{$len}//;
     }
 
+	# Drop these files entirely.
+	/\s+(private-multiple-fs|multiple-fs|LISP-MapCache-IPv\S+|nv_hdr)$/ &&
+	    next;
+
+	if (/(dhcp_[^. ]*\.txt|vlan\.dat|sflog|snooping)/ ||
+		 /(smart-log\/agentlog|syslog)\s*$/) {
 	# filter frequently changing files (dhcp & vlan database) from flash
     # change from:
     # 9          660 Jan 15 2011 20:43:54 vlan.dat
@@ -1069,7 +1078,6 @@ sub ShowFlash {
     # to:
     #                                     vlan.dat
     #                                            vlan.dat
-	if (/(dhcp_[^. ]*\.txt|vlan\.dat|sflog|snooping|smart-log\/agentlog|syslog)\s*$/) {
         if (/(\s*\d+)(\s+[-rwx]+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+)/) {
         my($fn, $a, $sz, $c, $dt, $rem) = ($1, $2, $3, $4, $5, $');
         my($fnl, $szl, $dtl) = (length($fn), length($sz), length($dt));
@@ -1094,8 +1102,9 @@ sub ShowFlash {
         my($fmt) = "%-". $fnl ."s%s%-". $szl ."s%s%-". $dtl ."s%s";
         $_ = sprintf($fmt, "", $a, "", $c, "", $rem);
         }
-    }
-
+	    /\s+(\S+)\s*$/ &&
+		ProcessHistory("FLASH","keysort","$1","!Flash: $_") && next;
+	} elsif (/(running-config-archive-)\S+\s*$/) {
 	# filter config archives from flash
 	# change from:
 	# 9          660 Jan 15 2011 20:43:54 running-config-archive-Jul--1-16-50-27.123-113
@@ -1103,7 +1112,6 @@ sub ShowFlash {
 	# to:
 	#                                     running-config-archive-<removed>
 	#                                     running-config-archive-<removed>
-	if (/(running-config-archive-)\S+\s*$/) {
 	    my($arc) = $1;
 	    if (/(\s*\d+)(\s+[-rwx]+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+)/) {
 		my($fn, $a, $sz, $c, $dt, $rem) = ($1, $2, $3, $4, $5, $');
@@ -1126,13 +1134,16 @@ sub ShowFlash {
 		my($fmt) = "%-". $fnl ."s%s%-". $szl ."s%s%-". $dtl ."s%s%s\n";
 		$_ = sprintf($fmt, "", $a, "", $c, "", $arc, "<removed>");
 	    }
+	    /\s+(\S+)\s*$/ &&
+		ProcessHistory("FLASH","keysort","$1","!Flash: $_") && next;
+	} elsif (/^(\s*\d+)(\s+[-rwx]+\s+\d+\s+\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+\s+)(\S+)/ ||
+		 /^(\s*\d+)(\s+[-rwx]+\s+\d+\s+\w+ \d+\s+\d+ \d+:\d+:\d+\s+)(\S+)/ ||
+		 /^(\s*\d+)(\s+\d+\s+\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+\s+)(\S+)/ ||
+		 /^(\s*\d+)(\s+\d+\s+\w+ \d+\s+\d+ \d+:\d+:\d+\s+)(\S+)/) {
+	    ProcessHistory("FLASH","keysort","$2","!Flash: $1$2$3\n") && next;
 	}
 
-    # Drop these files entirely.
-    /\s+(private-multiple-fs|multiple-fs|LISP-MapCache-IPv\S+|nv_hdr)$/ &&
-        next;
-
-	if (/(\d+) bytes (available|total) \((\d+) bytes (free|used)\)/) {
+	if (/(\d+) bytes (available|total) \((\d+) bytes (free|used)(\/\s+% free)?\)/) {
 	    my($avail);
 	    my($preamble) = "";
         if ($2 eq "available") {
@@ -1195,18 +1206,29 @@ sub DirSlotN {
     return(-1) if (/\%Error opening \S+:\S+ \(Device or resource busy\)/i);
     return(-1) if (/command authorization failed/i);
     return(1) if (/(Open device \S+ failed|Error opening \S+:)/);
+	# the pager can not be disabled per-session on the PIX
+	if (/^(<-+ More -+>)/) {
+	    my($len) = length($1);
+	    s/^$1\s{$len}//;
+	}
+
     # skip dir sup-bootflash if dir sup-bootdisk was successful, duplicates
     if ($cmd =~ / sup-bootdisk/) {
         $supbootdisk++;
     } elsif ($supbootdisk && $cmd =~ / sup-bootflash/) {
         return(0);
     }
-    # filter frequently changing files from IOX bootflash
-    if ($dev =~ /bootflash/) {
-        next if (/temp_cont\s*$/);
-        next if (/uptime_cont\s*$/);
-        next if (/volt_cont\s*$/);
-    }
+
+	# Drop LISP cache.
+	/\s+LISP-MapCache-IPv\S+$/ && next;
+
+	# Filter internal file used by ISSU (In-Service Software Upgrade)
+	# on dual RP ASR systems
+	next if (/\.issu_loc_lock\s*$/);
+
+	# vASA nonsense
+	# 9 file(s) total size: 252854822 bytes
+	next if (/\d+ file\S+ total size: \d+ bytes/i);
 
     # filter frequently changing files (dhcp & vlan database)
     # change from:
@@ -1215,73 +1237,82 @@ sub DirSlotN {
     # to:
     #       -rw-                                   vlan.dat
     #       -rw-                                           vlan.dat
-	if (/(dhcp_[^. ]*\.txt|vlan\.dat|sflog|snooping|syslog)\s*$/) {
-        if (/(\s*\d+)(\s+\S+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+)/) {
+	if (/(dhcp_[^. ]*\.txt|vlan\.dat|sflog|snooping|syslog)\s*$/ ||
+	    /(tracelogs|throughput_monitor_params|underlying-config)\s*$/) {
+	    if (/(\s*\d+\s+)(\S+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+)/) {
         my($fn, $a, $sz, $c, $dt, $rem) = ($1, $2, $3, $4, $5, $');
         my($fnl, $szl, $dtl) = (length($fn), length($sz), length($dt));
-        my($fmt) = "%-". $fnl ."s%s%-". $szl ."s%s%-". $dtl ."s%s";
-        $_ = sprintf($fmt, "", $a, "", $c, "", $rem);
-        } elsif (/(\s*\d+)(\s+\S+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+)/) {
+		my($fmt) = "%s%-". $szl ."s%s%-". $dtl ."s%s";
+		$_ = sprintf($fmt, $a, "", $c, "", $rem);
+	    } elsif (/(\s*\d+\s+)(\S+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+)/) {
         my($fn, $a, $sz, $c, $dt, $rem) = ($1, $2, $3, $4, $5, $');
         my($fnl, $szl, $dtl) = (length($fn), length($sz), length($dt));
-        my($fmt) = "%-". $fnl ."s%s%-". $szl ."s%s%-". $dtl ."s%s";
-        $_ = sprintf($fmt, "", $a, "", $c, "", $rem);
-        }
+		my($fmt) = "%s%-". $szl ."s%s%-". $dtl ."s%s";
+		$_ = sprintf($fmt, $a, "", $c, "", $rem);
+	    } elsif (/(\s*\d+\s+)(\S+\s+)(\d+)(\s+<no date>)/i) {
+		# 32771  -rw-            24520                    <no date>  underlying-config
+		my($fn, $a, $sz, $dt, $rem) = ($1, $2, $3, $4, $');
+		my($fnl, $szl) = (length($fn), length($sz));
+		my($fmt) = "%s%-". $szl ."s%s%s";
+		$_ = sprintf($fmt, $a, "", $dt, $rem);
     }
+	    /\s+(\S+)\s*$/ &&
+		ProcessHistory("FLASH","keysort","$1","!Flash: $dev: $_") &&
+		next;
+	} elsif (/(running-config-archive-)\S+\s*$/) {
+	    my($arc) = $1;
 
-	# filter frequently changing files (dhcp & vlan database)
+	    # filter frequently changing files of the config archive feature
 	# change from:
 	#    9  -rw-         660  Jan 15 2011 20:43:54 running-config-archive-Jul--1-16-50-27.123-113
 	#    9  -rw-         660  Jan 15 2011 20:43:54 +00:00  running-config-archive-Jul--1-16-50-27.123-113
 	# to:
 	#       -rw-                                   running-config-archive-Jul--1-16-50-27.123-113
 	#       -rw-                                           running-config-archive-Jul--1-16-50-27.123-113
-	if (/(running-config-archive-)\S+\s*$/) {
-	    my($arc) = $1;
-	    if (/(\s*\d+)(\s+\S+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+)/) {
+	    if (/(\s*\d+\s+)(\S+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+)/) {
 		my($fn, $a, $sz, $c, $dt, $rem) = ($1, $2, $3, $4, $5, $');
 		my($fnl, $szl, $dtl) = (length($fn), length($sz), length($dt));
-		my($fmt) = "%-". $fnl ."s%s%-". $szl ."s%s%-". $dtl ."s%s%s\n";
-		$_ = sprintf($fmt, "", $a, "", $c, "", $arc, "<removed>");
-	    } elsif (/(\s*\d+)(\s+\S+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+)/) {
+		my($fmt) = "%s%-". $szl ."s%s%-". $dtl ."s%s%s\n";
+		$_ = sprintf($fmt, $a, "", $c, "", $arc, "<removed>");
+	    } elsif (/(\s*\d+\s+)(\S+\s+)(\d+)(\s+)(\w+ \d+\s+\d+ \d+:\d+:\d+)/) {
 		my($fn, $a, $sz, $c, $dt, $rem) = ($1, $2, $3, $4, $5, $');
 		my($fnl, $szl, $dtl) = (length($fn), length($sz), length($dt));
-		my($fmt) = "%-". $fnl ."s%s%-". $szl ."s%s%-". $dtl ."s%s%s\n";
-		$_ = sprintf($fmt, "", $a, "", $c, "", $arc, "<removed>");
+		my($fmt) = "%s%-". $szl ."s%s%-". $dtl ."s%s%s\n";
+		$_ = sprintf($fmt, $a, "", $c, "", $arc, "<removed>");
 	    }
-	}
-
-    # Drop LISP cache.
-    /\s+LISP-MapCache-IPv\S+$/ && next;
-
-    # Filter internal file used by ISSU (In-Service Software Upgrade)
-    # on dual RP ASR systems
-    next if (/\.issu_loc_lock\s*$/);
-
-    if (/.*\((\d+) bytes free\)/) {
-        my($tmp) = $1;
-        if ($tmp >= (1024 * 1024 * 1024)) {
-        $tmp = int($tmp / (1024 * 1024 * 1024));
-        s/$1 bytes free/$tmp GB free/;
-        } elsif ($tmp >= (1024 * 1024)) {
-        $tmp = int($tmp / (1024 * 1024));
-        s/$1 bytes free/$tmp MB free/;
-        } elsif ($tmp >= (1024)) {
-        $tmp = int($tmp / 1024);
-        s/$1 bytes free/$tmp KB free/;
-        } elsif ($tmp > 0) {
-        s/$1 bytes free/< 1KB free/;
+	    /\s+(\S+)\s*$/ &&
+		ProcessHistory("FLASH","keysort","$1","!Flash: $dev: $_") &&
+		next;
         } else {
-        s/$1 bytes free/0 bytes free/;
+	    # drop file number (from the various formats):
+	    #     3  -rw-             1011                    <no date>  ifIndex-table
+	    #    9  -rw-         660  Jan 15 2011 20:43:54 vlan.dat
+	    #   16  -rw-             5437  Jan 16 2016 02:22:32 +00:00  licenses
+	    if (/(\s*\d+\s+)(\S+\s+\d+\s+\w+ \d+\s+\d+ \d+:\d+:\d+ .\d+:\d+)/ ||
+	        /(\s*\d+\s+)(\S+\s+\d+\s+\w+ \d+\s+\d+ \d+:\d+:\d+)/ ||
+	        /(\s*\d+\s+)(\S+\s+\d+\s+<no date>\s+\S+)/) {
+		#my($fn, $a, $rem) = ($1, $2, $');
+		#my($fnl) = length($fn);
+		#my($fmt) = "%-". $fnl ."s%s%s\n";
+		#$_ = sprintf($fmt, "", $a, $rem);
+		$_ = $2 . $';
+		/\s+(\S+)\s*$/ &&
+		    ProcessHistory("FLASH","keysort","$1","!Flash: $dev: $_") &&
+		    next;
         }
     }
-	if ($ios eq "XE" && /^((\s+)?\d+\s+\S+)\s+\d+.*(tracelogs|throughput_monitor_params)$/) {
-        $_ = "$1" . sprintf("%43s", "") . "$3\n";
-    }
-    # the pager can not be disabled per-session on the PIX
-    if (/^(<-+ More -+>)/) {
-        my($len) = length($1);
-        s/^$1\s{$len}//;
+
+	# XE: 822083584 bytes total (821081600 bytes free)
+	if (/^\s*(\d+) bytes total\s+\((\d+) bytes free\)/i) {
+	    ProcessHistory("FLASH","","","!Flash: $dev: " .
+			   diskszsummary($1, $2) . "\n");
+	    next;
+	}
+	# vASA: 8571076608 bytes total (8306561024 bytes free/96% free)
+	if (/^\s*(\d+) bytes total \((\d+) bytes free\/\d+% free\)/) {
+	    ProcessHistory("FLASH","","","!Flash: $dev: " .
+			   diskszsummary($1, $2) . "\n");
+	    next;
     }
 
     ProcessHistory("FLASH","","","!Flash: $dev: $_");
@@ -1714,7 +1745,7 @@ REDUX:    tr/\015//d;
     }
     # 7200, 3800, 3600, 2600, and 1700 stuff
     if (/^(Slot)\s+(\d+(\/\d+)?):/
-	    || /^\s+(PVDM|WIC|VIC|WIC\/VIC) Slot (\d):/
+	    || /^\s+(PVDM|WIC|VIC|WIC\/VIC|WIC\/VIC\/HWIC) Slot (\d):/
         || /^(Encryption AIM) (\d):/
         || /^(AIM Module in slot:) (\d)/) {
 	    if ($1 eq "PVDM") {
@@ -1725,6 +1756,8 @@ REDUX:    tr/\015//d;
         $WIC = "/$2";
         } elsif ($1 eq "WIC/VIC") {
         $WIC = "/$2";
+	    } elsif ($1 eq "WIC/VIC/HWIC") {
+		$WIC = "/$2";
         } elsif ($1 eq "DSP") {
         $WIC = "/$2";
         } elsif ($1 eq "Encryption AIM") {
@@ -1919,59 +1952,67 @@ sub ShowModule {
     print STDERR "    In ShowModule: $_" if ($debug);
 
     my(@lines);
-    my($slot, $pa, $switch_id);
-    my $sub_module = 0;
+    my($slot, $pa);
+    my($switch, $switch_n);
 
+    if ($vss_show_module == 1) {
+	while (<$INPUT>) {
+	    last if (/^$prompt/);
+	}
+	return(0);
+    }
     while (<$INPUT>) {
         tr/\015//d;
-        return if (/^\s*\^$/);
-        #last if (/online diag status/i);
+	next if (/^\s*\^$/);
+	if (/online diag status/i) {
+	    $vss_show_module = 1;
+	    next;
+	}
         last if (/^$prompt/);
         next if (/^(\s*|\s*$cmd\s*)$/);
         return(-1) if (/command authorization failed/i);
-        return(0) if ($found_module);
         # the pager can not be disabled per-session on the PIX
         if (/^(<-+ More -+>)/) {
             my($len) = length($1);
             s/^$1\s{$len}//;
         }
 
-        $sub_module = 1 if (/^Mod\s*Sub-Module/);
-
-        # if we are in VSS
-        if (/Switch Number:\s*([0-9]+)/) {
-            $switch_id = $1 * 10000;
-            $lines[$switch_id] = "!Switch: $1\n";
+	# match  Switch Number:     2   Role:  Virtual Switch Active/Standby
+	if (/^ *Switch Number: *(\d) .*Virtual Switch\s+(\S+)/) {
+	    $switch_n = $1;
+	    $switch = "Sw$1 ";
+	    ProcessHistory("Module","","","!Virtual Switch $1 is $2\n");
             next;
         }
-        $switch_id //= 0;
 
         # match slot/card info line
-        if (/^\s*(\d+)\s+(\d+)\s+(.*)\s+(\S+)\s+(\S+)\s*$/) {
-            $lines[$switch_id + $1 * 1000] .= "!Slot $1: type $3, $2 ports\n!Slot $1: part $4, serial $5\n";
-            $lines[$switch_id + $1 * 1000] =~ s/\s+,/,/g;
+	if (/^ *(\d+)\s+(\d+)\s+(.*)\s+(\S+)\s+(\S+)\s*$/) {
+	    $lines[$switch_n * 10000 + $1 * 1000] .= "!Slot ${switch}$1: type $3, $2 ports\n!Slot ${switch}$1: part $4, serial $5\n";
+	    $lines[$switch_n * 10000 + $1 * 1000] =~ s/\s+,/,/g;
             next;
         }
         # now match the Revs in the second paragraph of o/p and stick it in
         # the array with the previous bits...grumble.
-        if (/^\s*(\d+)\s+\S+\s+to\s+\S+\s+(\S+)\s+(\S*)\s+(\S+)(\s+\S+)?\s*$/) {
-            $lines[$switch_id + $1 * 1000] .= "!Slot $1: hvers $2, firmware $3, sw $4\n";
-            $lines[$switch_id + $1 * 1000] =~ s/\s+,/,/g;
+	if (/^ *(\d+)\s+\S+\s+to\s+\S+\s+(\S+)\s+(\S*)\s+(\S+)(\s+\S+)?\s*$/) {
+	    $lines[$switch_n * 10000 + $1 * 1000] .= "!Slot ${switch}$1: hvers $2, firmware $3, sw $4\n";
+	    $lines[$switch_n * 10000 + $1 * 1000] =~ s/\s+,/,/g;
             next;
         }
         # grab the sub-modules, if any
-        if ($sub_module && /^\s+(\d+)\s(.*)\s+(\S+)\s+(\S+)\s+(\S+)\s+\S+\s*$/) {
+	if (/^\s+(\d+)\s(.*)\s+(\S+)\s+(\S+)\s+(\S+)\s+\S+\s*$/) {
             my($idx);
             $pa = 0 if ($1 != $slot);
             $slot = $1;
-            $idx = $1 * 1000 + $1 * 10 + $pa;
-            $lines[$switch_id + $idx] .= "!Slot $1/$pa: type $2\n";
-            $lines[$switch_id + $idx] .= "!Slot $slot/$pa: part $3, serial $4\n";
-            $lines[$switch_id + $idx] .= "!Slot $slot/$pa: hvers $5\n";
+	    $idx = $switch_n * 10000 + $1 * 1000 + $1 * 10 + $pa;
+	    $lines[$idx] .= "!Slot ${switch}$1/$pa: type $2\n";
+	    $lines[$idx] .= "!Slot ${switch}$slot/$pa: part $3, serial $4\n";
+	    $lines[$idx] .= "!Slot ${switch}$slot/$pa: hvers $5\n";
             $pa++;
         }
     }
-    $found_module = 1 if (@lines);
+    if ( $switch_n != 0 ) {
+	ProcessHistory("Module","","","!\n");
+    }
     foreach $slot (@lines) {
         next if ($slot =~ /^\s*$/);
         ProcessHistory("Module","","","$slot!\n");
@@ -2245,8 +2286,9 @@ TOP:
         }
         /^! no configuration change since last restart/i && next;
         # skip emtpy lines at the beginning
-        next if (!$linecnt && /^\s*$/);
-    
+	if (!$linecnt && /^\s*$/) {
+	    next;
+	}
         if (!$linecnt && defined($config_register)) {
             ProcessHistory("","","", "!\nconfig-register $config_register\n");
         }
@@ -2327,7 +2369,8 @@ TOP:
         }
         if (/^username (\S+)(\s.*)? secret /) {
             if ($filter_pwds >= 2) {
-                ProcessHistory("USER","keysort","$1","!username $1$2 secret <removed>\n");
+		ProcessHistory("USER","keysort","$1",
+			       "!username $1$2 secret <removed>\n");
             } else {
                 ProcessHistory("USER","keysort","$1","$_");
             }
@@ -2335,9 +2378,11 @@ TOP:
         }
         if (/^username (\S+)(\s.*)? password ((\d) \S+|\S+)/) {
             if ($filter_pwds >= 2) {
-                ProcessHistory("USER","keysort","$1","!username $1$2 password <removed>\n");
+		ProcessHistory("USER","keysort","$1",
+			       "!username $1$2 password <removed>\n");
             } elsif ($filter_pwds >= 1 && $4 ne "5"){
-                ProcessHistory("USER","keysort","$1","!username $1$2 password <removed>\n");
+		ProcessHistory("USER","keysort","$1",
+			       "!username $1$2 password <removed>\n");
             } else {
                 ProcessHistory("USER","keysort","$1","$_");
             }
@@ -2358,7 +2403,8 @@ TOP:
             ProcessHistory("","","","!$1<removed>\n");
             next;
         }
-        if (/^( set session-key (in|out)bound esp \d+ (authenticator|cypher) )/ && $filter_pwds >= 1) {
+	if (/^( set session-key (in|out)bound esp \d+ (authenticator|cypher) )/
+	    && $filter_pwds >= 1) {
             ProcessHistory("","","","!$1<removed>\n");
             next;
         }
@@ -2390,7 +2436,8 @@ TOP:
         if (/^\s+isis password (\S+)( .*)?/ && $filter_pwds >= 1) {
             ProcessHistory("","","","!isis password <removed>$2\n"); next;
         }
-        if (/^\s+(domain-password|area-password) (\S+)( .*)?/ && $filter_pwds >= 1) {
+	if (/^\s+(domain-password|area-password) (\S+)( .*)?/
+							&& $filter_pwds >= 1) {
             ProcessHistory("","","","!$1 <removed>$3\n"); next;
         }
         # this is reversable, despite 'md5' in the cmd
@@ -2398,7 +2445,8 @@ TOP:
             ProcessHistory("","","","!$1 <removed>\n"); next;
         }
         # this is also reversable, despite 'md5 encrypted' in the cmd
-        if (/^(  message-digest-key \d+ md5 (7|encrypted)) / && $filter_pwds >= 1) {
+	if (/^(  message-digest-key \d+ md5 (7|encrypted)) /
+	    && $filter_pwds >= 1) {
             ProcessHistory("","","","!$1 <removed>\n"); next;
         }
         if (/^((crypto )?isakmp key) (\d )?\S+ / && $filter_pwds >= 1) {
@@ -2429,11 +2477,13 @@ TOP:
             next;
         }
         # ASA/PIX keys in more system:running-config
-        if (/^(( ikev2)? (local|remote)-authentication pre-shared-key ).*/ && $filter_pwds >= 1) {
+	if (/^(( ikev2)? (local|remote)-authentication pre-shared-key ).*/ &&
+	    $filter_pwds >= 1) {
             ProcessHistory("","","","!$1 <removed> $'"); next;
         }
         # ASA/PIX keys in more system:running-config
-        if (/^(( ikev1)? pre-shared-key | key |failover key ).*/ && $filter_pwds >= 1) {
+	if (/^(( ikev1)? pre-shared-key | key |failover key ).*/ &&
+	    $filter_pwds >= 1) {
             ProcessHistory("","","","!$1 <removed> $'"); next;
         }
         # ASA/PIX keys in more system:running-config
@@ -2456,7 +2506,6 @@ TOP:
             my($expath) = $_;
             while (<$INPUT>) {
                 tr/\015//d;
-                last if (/^$prompt/);
                 last if (/^$prompt/ || ! /^(ip explicit-path name |[ !])/);
                 if (/^ip explicit-path name (\S+)/) {
                     ProcessHistory("EXPATH","keysort","$key","$expath");
@@ -2501,7 +2550,9 @@ TOP:
         }
         if ($aclfilterseq) {
             /^ip(v6)? prefix-list\s+(\S+)\s+seq\s+(\d+)\s+(permit|deny)\s+(\S+)(.*)/
-                && ProcessHistory("PACL $2 $4","$aclsort","$5","ip$1 prefix-list $2 $4 $5$6\n")    && next;
+		&& ProcessHistory("PACL $2 $4","$aclsort","$5",
+				  "ip$1 prefix-list $2 $4 $5$6\n")
+		&& next;
         }
         # sort ipv{4,6} access-lists
         if ($aclfilterseq && /^ipv(4|6) access-list (\S+)\s*$/) {
@@ -2546,9 +2597,11 @@ TOP:
                             last;
                         }
                     }
-                    ProcessHistory("ACL $nlri $key $cmd", "$aclsort", "$ip"," $cmd $resid\n");
+		    ProcessHistory("ACL $nlri $key $cmd", "$aclsort", "$ip",
+				   " $cmd $resid\n");
                 } else {
-                    ProcessHistory("ACL $nlri $key $cmd", "", ""," $cmd $resid\n");
+		    ProcessHistory("ACL $nlri $key $cmd", "", "",
+				   " $cmd $resid\n");
                 }
             }
         }
@@ -2595,13 +2648,15 @@ TOP:
         # [udp-port port] '
         if (/^(snmp-server .*community) ([08] )?(\S+)/) {
             if ($filter_commstr) {
-                ProcessHistory("SNMPSERVERCOMM","keysort","$_","!$1 <removed>$'") && next;
+		ProcessHistory("SNMPSERVERCOMM","keysort","$_",
+			       "!$1 <removed>$'") && next;
             } else {
                 ProcessHistory("SNMPSERVERCOMM","keysort","$_","$_") && next;
             }
         }
         # prune tacacs/radius server keys
-        if (/^((tacacs|radius)-server\s(\w*[-\s(\s\S+])*\s?key) (\d )?\S+/ && $filter_pwds >= 1) {
+	if (/^((tacacs|radius)-server\s(\w*[-\s(\s\S+])*\s?key) (\d )?\S+/
+	    && $filter_pwds >= 1) {
             ProcessHistory("","","","!$1 <removed>$'"); next;
         }
         # order clns host statements
@@ -2633,7 +2688,8 @@ TOP:
 
         # system controller
         /^syscon address (\S*) (\S*)/ &&
-            ProcessHistory("","","","!syscon address $1 <removed>\n") && next;
+	    ProcessHistory("","","","!syscon address $1 <removed>\n") &&
+	    next;
         if (/^syscon password (\S*)/ && $filter_pwds >= 1) {
             ProcessHistory("","","","!syscon password <removed>\n");
             next;

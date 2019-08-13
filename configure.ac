@@ -13,7 +13,7 @@ AC_INIT(m4_esyscmd(configure.vers package_name),
 	[rancid@shrubbery.net])
 AC_CONFIG_SRCDIR(CHANGES)
 AM_INIT_AUTOMAKE
-COPYYEARS="1997-2017"
+COPYYEARS="1997-2018"
 AC_SUBST(COPYYEARS)
 
 
@@ -418,7 +418,7 @@ AH_TOP([
 AH_BOTTOM([
 
 /* damned linux... */
-#ifdef LINUX
+#if defined(LINUX) || defined(linux)
 # define _GNU_SOURCE
 #endif
 
@@ -511,6 +511,7 @@ AC_CONFIG_FILES(bin/f5rancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/f10rancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/flogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/fnlogin bin/fnrancid, [chmod a+x $ac_file])
+AC_CONFIG_FILES(bin/fxlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/hlogin, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/htlogin bin/htrancid, [chmod a+x $ac_file])
 AC_CONFIG_FILES(bin/jlogin bin/jerancid, [chmod a+x $ac_file])

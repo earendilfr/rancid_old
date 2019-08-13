@@ -85,11 +85,12 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
             }
 
             # handle escaped ;s in commands, and ;; and ^;
-            regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-            regsub {^;} $esccommand "\u002;" command
-            set sep "\\1\u001"
-            regsub -all {([^\\])\;} $command "$sep" esccommand
-            set sep "\u001"
+	    regsub -all {([^\\]);} $command "\\1\u0002;" esccommand
+	    regsub -all {([^\\]);;} $esccommand "\\1;\u0002;" command
+	    regsub {^;} $command "\u0002;" esccommand
+	    regsub -all {[\\];} $esccommand ";" command
+	    regsub -all {\u0002;} $command "\u0002" esccommand
+	    set sep "\u0002"
             set commands [split $esccommand $sep]
             set num_commands [llength $commands]
             set rshfail 0
@@ -332,7 +333,7 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 
 # Enable
 proc do_enable { enauser enapasswd } {
-    global in_proc
+    global do_saveconfig in_proc
     global prompt u_prompt e_prompt enacmd
     set in_proc 1
 
@@ -394,7 +395,7 @@ proc get_prompt { prompt } {
 
 # Run commands given on the command line.
 proc run_commands { prompt command } {
-    global do_saveconfig in_proc timeoutdflt
+    global do_interact do_saveconfig in_proc timeoutdflt
     set in_proc 1
 
     # match cisco config mode prompts too, such as router(config-if)#,
@@ -526,6 +527,11 @@ proc run_commands { prompt command } {
         }
     }
     log_user 1
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
 
     send -h "exit\r"
     expect {

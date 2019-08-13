@@ -1,9 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 ## A Makefile.in is supplied, in case you do not have automake.
 
-## $Id: Makefile.am 3672 2017-06-21 00:48:54Z heas $
+## $Id: Makefile.am 3854 2018-08-10 12:33:50Z heas $
 ##
-## Copyright (c) 1997-2017 by Henry Kilmer and John Heasley
+## Copyright (c) 1997-2018 by Henry Kilmer and John Heasley
 ## All rights reserved.
 ##
 ## Please see the file COPYING for the text of the license.
@@ -16,14 +16,14 @@ bin_SCRIPTS = a10login alogin agmrancid anlogin arancid \
 	avologin avorancid blogin brancid brlogin cat5rancid clogin \
 	control_rancid csblogin cssrancid \
 	dllogin elogin erancid f5rancid f10rancid \
-	flogin fnlogin fnrancid hlogin hrancid htlogin \
+	flogin fnlogin fxlogin hlogin hrancid htlogin \
 	htrancid jerancid jlogin mrancid mrvlogin mtlogin mtrancid \
 	nlogin noklogin nrancid nslogin nsrancid panlogin plogin \
 	rancid rblogin rivlogin \
 	rivrancid rrancid rtftpcopy srancid tlogin trancid ulogin wlogin \
 	xilogin xirancid xlogin zrancid
 # XXX hack for the rancid to get pkglibdir, see corresponding XXX below
-bin_in = hrancid.in plogin.in rancid.in srancid.in
+bin_in = control_rancid.in hrancid.in plogin.in rancid.in srancid.in
 
 bin_SCRIPTS += lg.cgi lgform.cgi rancid-cvs rancid-fe rancid-run
 EXTRA_DIST= lg.cgi.in lgform.cgi.in rancid-cvs.in rancid-fe.in rancid-run.in \
@@ -89,6 +89,7 @@ $(bin_in:%.in=%): Makefile $(top_builddir)/config.status ../COPYING
 # XXX there must be a better way to produce these dependencies, perhaps in
 #     configure, but more likely need a depend target.
 alogin: $(srcdir)/alogin.in
+control_rancid: $(srcdir)/control_rancid.in
 hlogin: $(srcdir)/hlogin.in
 hrancid: $(srcdir)/hrancid.in
 plogin: $(srcdir)/plogin.in
