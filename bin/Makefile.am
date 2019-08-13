@@ -64,6 +64,7 @@ auto_edit = sed \
 	-e 's,@localstatedir\@,$(localstatedir),g' \
 	-e 's,@pkglibdir\@,$(pkglibdir),g' \
 	-e 's,@sysconfdir\@,$(sysconfdir),g' \
+	-e 's,@DIFF_CMD\@,$(DIFF_CMD),g' \
 	-e 's,@EXPECT_PATH\@,$(EXPECT_PATH),g' \
 	-e 's,@PERLV\@,$(PERLV),g' \
 	-e 's,@PERLV_PATH\@,$(PERLV_PATH),g' \
@@ -76,8 +77,7 @@ auto_edit = sed \
 	-e 's,@SENDMAIL\@,$(SENDMAIL),g' \
 	-e 's,@VERSION\@,$(VERSION),g' \
 	-e 's,@COPYYEARS\@,$(COPYYEARS),g' \
-	-e '/@copyright@/r ../COPYING' \
-	-e '/@copyright@/d'
+	-e '/@copyright@/r ../COPYING' -e '/@copyright@/d'
 
 # XXX this is the generic version for the rest of bin_scripts that comes from
 #     configure.in now.  perhaps change to use this.

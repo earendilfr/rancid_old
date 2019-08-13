@@ -531,9 +531,9 @@ mrancid: $(top_builddir)/config.status $(srcdir)/mrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mrvlogin: $(top_builddir)/config.status $(srcdir)/mrvlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-mtlogin: $(top_builddir)/config.status $(srcdir)/mtlogin.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mtrancid: $(top_builddir)/config.status $(srcdir)/mtrancid.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+mtlogin: $(top_builddir)/config.status $(srcdir)/mtlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 nlogin: $(top_builddir)/config.status $(srcdir)/nlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -563,15 +563,15 @@ tlogin: $(top_builddir)/config.status $(srcdir)/tlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 trancid: $(top_builddir)/config.status $(srcdir)/trancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-ulogin: $(top_builddir)/config.status $(srcdir)/ulogin.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-wlogin: $(top_builddir)/config.status $(srcdir)/wlogin.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 xilogin: $(top_builddir)/config.status $(srcdir)/xilogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 xirancid: $(top_builddir)/config.status $(srcdir)/xirancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 xlogin: $(top_builddir)/config.status $(srcdir)/xlogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+ulogin: $(top_builddir)/config.status $(srcdir)/ulogin.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+wlogin: $(top_builddir)/config.status $(srcdir)/wlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 zrancid: $(top_builddir)/config.status $(srcdir)/zrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -667,8 +667,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hpuifilter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hpuifilter.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par.Po@am__quote@ # am--include-marker
+
+$(am__depfiles_remade):
+	@$(MKDIR_P) $(@D)
+	@echo '# dummy' >$@-t && $(am__mv) $@-t $@
+
+am--depfiles: $(am__depfiles_remade)
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -736,7 +742,10 @@ cscopelist-am: $(am__tagged_files)
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
-distdir: $(DISTFILES)
+distdir: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) distdir-am
+
+distdir-am: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
 	list='$(DISTFILES)'; \
@@ -809,7 +818,8 @@ clean: clean-am
 clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
+		-rm -f ./$(DEPDIR)/hpuifilter.Po
+	-rm -f ./$(DEPDIR)/par.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -855,7 +865,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
+		-rm -f ./$(DEPDIR)/hpuifilter.Po
+	-rm -f ./$(DEPDIR)/par.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -875,7 +886,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am check check-am clean \
+.PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
 	clean-binPROGRAMS clean-generic cscopelist-am ctags ctags-am \
 	distclean distclean-compile distclean-generic distclean-tags \
 	distdir dvi dvi-am html html-am info info-am install \
@@ -902,6 +913,7 @@ $(bin_in:%.in=%): Makefile $(top_builddir)/config.status ../COPYING
 # XXX there must be a better way to produce these dependencies, perhaps in
 #     configure, but more likely need a depend target.
 alogin: $(srcdir)/alogin.in
+control_rancid: $(srcdir)/control_rancid.in
 hlogin: $(srcdir)/hlogin.in
 hrancid: $(srcdir)/hrancid.in
 plogin: $(srcdir)/plogin.in
