@@ -148,7 +148,7 @@ INF:
             ProcessHistory("COMMENTS","","","#Motherboard:\n");
             foreach my $key (keys %$motherboard) { ProcessHistory("COMMENTS","","","#  $key: $motherboard->{$key}\n"); }
         }
-        for my $index (0 .. length(@$slot)) {
+        for my $index (0 .. scalar(@$slot)) {
             if (exists($$slot[$index]->{'Serial Number'})) {
                 ProcessHistory("COMMENTS","","","#Line Card $index:\n");
                 foreach my $key (keys %{$$slot[$index]}) { ProcessHistory("COMMENTS","","","#  $key: $$slot[$index]->{$key}\n"); }
