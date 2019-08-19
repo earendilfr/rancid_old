@@ -264,6 +264,10 @@ sub WriteTerm {
     while (<$INPUT>) {
         tr/\015//d;
         next if (/^\s*$/);
+        return(0) if ($found_end);  # Only do this routine once
+        next if (/^(\s*|\s*$cmd\s*)$/);
+        return(1) if (/^Data Input Error:/);
+        return(1) if /(Invalid input detected|Type help or )/;
 
         # Ignore monitor down state, save the config as up.
         s/state down$/state up/i;
