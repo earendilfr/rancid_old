@@ -28,8 +28,15 @@ proc login { router user passwd cmethod identfile } {
     foreach prog [lrange $cmethod 0 end] {
         incr progs -1
         if [string match "ssh*" $prog] {
+            # ssh to the router & try to login with or without an identfile.
+            regexp {ssh(:([^[:space:]]+))*} $prog methcmd suffix port
             set cmd $sshcmd
-            if {"$identfile" != ""} { set cmd "$cmd -i $identfile" }
+            if {"$port" != ""} {
+                append cmd " -p $port"
+            }
+            if {"$identfile" != ""} { 
+                append cmd " -i $identfile" 
+            }
             set retval [catch {eval spawn [split "$cmd -x -l $user $router" { }]} reason]
             if { $retval } {
                 send_user "\nError: $cmd failed: $reason\n"
