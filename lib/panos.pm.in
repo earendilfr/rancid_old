@@ -37,7 +37,7 @@ sub import {
 sub init {
 
     # add content lines and separators
-    ProcessHistory("","","","!RANCID-CONTENT-TYPE: $devtype\n!\n");
+    ProcessHistory("","","","#RANCID-CONTENT-TYPE: $devtype\n\n");
 
     0;
 }
@@ -103,17 +103,18 @@ TOP: while(<$INPUT>) {
 # This routine parses "show system info"
 sub ShowInfo {
     my($INPUT, $OUTPUT, $cmd) = @_;
-    my($slot);
 
     print STDERR "    In ShowInfo:: $_" if ($debug);
 
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
+	chomp;
+	s/\s+$//; # remove tailing whitespaces
 	next if (/^(time:|uptime:)/);
 	next if (/^(app|av|global-protect-datafile|threat|wf-private|wildfire|url-filtering)-(version|release-date):/);
 
-	ProcessHistory("INFO","","","#$_");
+	ProcessHistory("INFO","","","#$_\n");
     }
     ProcessHistory("INFO","","","#\n");
     return(0);
